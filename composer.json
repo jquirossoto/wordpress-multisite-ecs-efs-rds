@@ -1,0 +1,16 @@
+{
+    "name": "jquirossoto/wordpress-multisite-ecs-efs-rds",
+    "authors": [
+        {
+            "name": "Jesús Quirós"
+        }
+    ],
+    "require": {},
+    "scripts": {
+        "docker-up": "docker-compose -f ./docker-compose.yml up -d",
+        "docker-down": "docker-compose kill",
+        "docker-build": "docker build -t wp-container . --build-arg DB_HOST=mysql --build-arg DB_PORT=3306 --build-arg DB_USER=exampleuser --build-arg DB_PASSWORD=examplepass --build-arg DB_NAME=exampledb --build-arg MULTISITE_HOST=test.com",
+        "docker-run": "docker run -it -p 80:8080 -p 443:8443 -v $(pwd)/docker/bitnami:/bitnami --rm --name='wp-container' --network=wordpress-multisite-ecs-efs-rds_wordpress-network wp-container",
+        "docker-ip": "docker inspect -f '{{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' wordpress-multisite-ecs-efs-rds_mysql_1"
+    }
+}
