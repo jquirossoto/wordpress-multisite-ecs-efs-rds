@@ -32,7 +32,7 @@ Resources:
       EnableDnsSupport: true
       Tags:
         - Key: Name
-          Value: ECSWP-VPC
+          Value: WP-VPC
 
   ################################### INTERNET GATEWAY ###################################
 
@@ -41,7 +41,7 @@ Resources:
     Properties:
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-IG
+          Value: WP-VPC-IG
     
   InternetGatewayAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
@@ -57,7 +57,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubRT
+          Value: WP-VPC-PubRT
 
   DefaultPublicRoute:
     Type: AWS::EC2::Route
@@ -78,7 +78,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN1
+          Value: WP-VPC-PubSN1
       VpcId: !Ref VPC
 
   PublicSubnet1RouteTableAssociation:
@@ -93,7 +93,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN1-NG-EIP
+          Value: WP-VPC-PubSN1-NG-EIP
       
   PublicSubnet1NatGateway:
     Type: AWS::EC2::NatGateway
@@ -102,7 +102,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN1-NG
+          Value: WP-VPC-PubSN1-NG
 
   ################################### SUBNET2 ###################################
 
@@ -114,7 +114,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN2
+          Value: WP-VPC-PubSN2
       VpcId: !Ref VPC
 
   PublicSubnet2RouteTableAssociation:
@@ -129,7 +129,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN2-NG-EIP
+          Value: WP-VPC-PubSN2-NG-EIP
       
   PublicSubnet2NatGateway:
     Type: AWS::EC2::NatGateway
@@ -138,7 +138,7 @@ Resources:
       SubnetId: !Ref PublicSubnet2
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PubSN2-NG
+          Value: WP-VPC-PubSN2-NG
 
   ################################### PRIVATE SUBNETS ###################################
 
@@ -151,7 +151,7 @@ Resources:
       CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet1, CIDR ]
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PrivSN1
+          Value: WP-VPC-PrivSN1
       VpcId:
         Ref: VPC
 
@@ -161,7 +161,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PrivSN1-RT
+          Value: WP-VPC-PrivSN1-RT
 
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
@@ -185,7 +185,7 @@ Resources:
       CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet2, CIDR ]
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PrivSN2
+          Value: WP-VPC-PrivSN2
       VpcId:
         Ref: VPC
 
@@ -195,7 +195,7 @@ Resources:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: ECSWP-VPC-PrivSN2-RT
+          Value: WP-VPC-PrivSN2-RT
 
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
