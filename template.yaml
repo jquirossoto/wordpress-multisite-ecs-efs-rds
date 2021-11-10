@@ -16,6 +16,12 @@ Mappings:
       CIDR: 10.2.2.0/24
     PrivateSubnet2:
       CIDR: 10.2.3.0/24
+  
+  NameConfig:
+    Database:
+      Name: wordpress
+    Container:
+      Name: wordpress
 
 ################################### APPLICATION RESOURCES ###################################
 
@@ -209,3 +215,254 @@ Resources:
       RouteTableId: !Ref PrivateSubnet2RouteTable
       DestinationCidrBlock: 0.0.0.0/0
       NatGatewayId: !Ref PublicSubnet2NatGateway
+
+  ################################### DATABASE ###################################
+
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WP-Database-SG
+      GroupDescription: WP-Database-SG
+      SecurityGroupIngress:
+        - Description : Allow traffic from ECSServiceSecurityGroup
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: WP-Database-SG
+      VpcId: !Ref VPC
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupName: WP-Database-SN-G
+      DBSubnetGroupDescription: WP-Database-SN-G
+      SubnetIds:
+        - !Ref PrivateSubnet1
+        - !Ref PrivateSubnet2
+
+  DatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: Secret for database instance
+      Name: rds-db-credentials/wordpress
+      GenerateSecretString:
+        SecretStringTemplate: '{"username": "wordpress"}'
+        GenerateStringKey: password
+        PasswordLength: 15
+        ExcludeCharacters: '"@/\'
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: wordpress
+      DBInstanceClass: db.t3.micro
+      DBName: !FindInMap [ NameConfig, Database, Name ]
+      Engine: mysql
+      MasterUsername: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+      MasterUserPassword: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      PubliclyAccessible: false
+      AllocatedStorage: 20
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      VPCSecurityGroups:
+        - !Ref DatabaseSecurityGroup
+
+  ################################### LOAD BALANCER ###################################
+
+  LoadBalancerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WP-LB-SG
+      GroupDescription: Wordpress LoadBalancer SecurityGroup
+      SecurityGroupIngress:
+        - Description: Allow traffic from the internet
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: WP-LB-SG
+      VpcId: !Ref VPC
+  
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: WP-LB
+      Type: application
+      Scheme: internet-facing
+      Subnets:
+        - !Ref PublicSubnet1
+        - !Ref PublicSubnet2
+      SecurityGroups:
+        - !Ref LoadBalancerSecurityGroup
+
+  LoadBalancerTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: WP-LB-TG
+      VpcId: !Ref VPC
+      Port: 8080
+      Protocol: HTTP
+      Matcher:
+        HttpCode: 200-299
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      TargetType: ip
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: 30
+
+  LoadBalancerListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  ################################### ECS ###################################
+
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties: 
+      CapacityProviders:
+        - FARGATE
+      ClusterName: WP-ECSCluster
+
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WP-ECSTaskExecutionRole
+      Description: WP-ECSTaskExecutionRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: WP-ECSTaskRole
+      Description: WP-ECSTaskRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ecs-tasks.amazonaws.com
+            Action:
+              - sts:AssumeRole
+
+  ECSTaskRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: WP-ECSTaskRolePolicy
+      Roles:
+        - !Ref ECSTaskRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: '*'
+
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: /aws/ecs/wp
+      RetentionInDays: 1
+
+  ECSTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      ContainerDefinitions:
+          - Name: !FindInMap [ NameConfig, Container, Name ]
+            Image: bitnami/wordpress@sha256:b5f785010d73076b2351bffc1ccf88da2dc3ef72b3a047750adfc07b206ee5f1
+            Environment:
+              - Name: WORDPRESS_DATABASE_HOST
+                Value: !GetAtt Database.Endpoint.Address
+              - Name: WORDPRESS_DATABASE_PORT_NUMBER
+                Value: !GetAtt Database.Endpoint.Port
+              - Name: WORDPRESS_DATABASE_USER
+                Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+              - Name: WORDPRESS_DATABASE_PASSWORD
+                Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+              - Name: WORDPRESS_DATABASE_NAME
+                Value: !FindInMap [ NameConfig, Database, Name ]
+            LogConfiguration:
+              LogDriver: awslogs
+              Options:
+                awslogs-group: !Ref ECSLogGroup
+                awslogs-region: !Ref AWS::Region
+                awslogs-stream-prefix: wp
+            Essential: true
+            PortMappings: 
+                # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
+              - ContainerPort: 8080
+                Protocol: tcp
+      Cpu: 1024
+      Memory: 3072
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      Family: WP-ECSTaskDefinition
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      TaskRoleArn: !Ref ECSTaskRole
+
+  ECSServiceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WP-ECS-SG
+      GroupDescription: WP-ECS-SG
+      SecurityGroupIngress:
+        - Description : Allow traffic from LoadBalancerSecurityGroup
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      Tags:
+        - Key: Name
+          Value: WP-ECS-SG
+      VpcId: !Ref VPC
+
+  ECSService:
+    Type: AWS::ECS::Service
+    Properties:
+      ServiceName: WP-ECSService
+      Cluster: !Ref ECSCluster
+      # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
+      DesiredCount: 1
+      TaskDefinition: !Ref ECSTaskDefinition
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - !Ref ECSServiceSecurityGroup
+          Subnets:
+            - !Ref PrivateSubnet1
+            - !Ref PrivateSubnet2
+      LoadBalancers:
+        - ContainerName: !FindInMap [ NameConfig, Container, Name ]
+          ContainerPort: 8080
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
