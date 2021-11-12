@@ -290,6 +290,8 @@ Resources:
   
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    DependsOn:
+      - InternetGatewayAttachment
     Properties:
       Name: WP-LB
       Type: application
