@@ -22,6 +22,8 @@ Mappings:
       Name: wordpress
     Container:
       Name: wordpress
+    EFSVolume:
+      Name: wordpress_home
 
 ################################### APPLICATION RESOURCES ###################################
 
@@ -34,7 +36,7 @@ Resources:
     Properties:
       CidrBlock: !FindInMap [ SubnetConfig, VPC, CIDR ]
       InstanceTenancy: default
-      EnableDnsHostnames: false
+      EnableDnsHostnames: true
       EnableDnsSupport: true
       Tags:
         - Key: Name
@@ -331,6 +333,64 @@ Resources:
         - Type: forward
           TargetGroupArn: !Ref LoadBalancerTargetGroup
 
+  ################################### EFS ###################################
+
+  EFSFileSystem:
+    Type: AWS::EFS::FileSystem
+    Properties:
+      Encrypted: false
+      FileSystemTags:
+        - Key: Name
+          Value: WP-EFS
+      PerformanceMode: generalPurpose
+      ThroughputMode: bursting
+
+  EFSMountTargetSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: WP-EFS-SG
+      GroupDescription: FileSystem Security Group
+      SecurityGroupIngress:
+        - Description : Allow traffic from ECSServiceSecurityGroup
+          IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          CidrIp: !FindInMap [ SubnetConfig, VPC, CIDR ]
+      Tags:
+        - Key: Name
+          Value: WP-EFS-MT-SG
+      VpcId: !Ref VPC
+
+  EFSMountTarget1:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: !Ref PrivateSubnet1
+      SecurityGroups:
+        - !Ref EFSMountTargetSecurityGroup
+
+  EFSMountTarget2:
+    Type: AWS::EFS::MountTarget
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      SubnetId: !Ref PrivateSubnet2
+      SecurityGroups:
+        - !Ref EFSMountTargetSecurityGroup
+
+  EFSAccessPoint:
+    Type: AWS::EFS::AccessPoint
+    Properties:
+      FileSystemId: !Ref EFSFileSystem
+      PosixUser:
+        Uid: "0"
+        Gid: "0"
+      RootDirectory:
+        CreationInfo:
+          OwnerGid: "0"
+          OwnerUid: "0"
+          Permissions: "0777"
+        Path: /
+
   ################################### ECS ###################################
 
   ECSCluster:
@@ -422,6 +482,18 @@ Resources:
                 # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
               - ContainerPort: 8080
                 Protocol: tcp
+            MountPoints:
+              - SourceVolume: EFS
+                ContainerPath: /bitnami/wordpress
+                ReadOnly: false
+      Volumes:
+        - Name: EFS
+          EFSVolumeConfiguration: 
+            FilesystemId: !Ref EFSFileSystem
+            RootDirectory: /
+            AuthorizationConfig:
+              AccessPointId: !Ref EFSAccessPoint
+            TransitEncryption: ENABLED
       Cpu: 1024
       Memory: 3072
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
@@ -442,6 +514,17 @@ Resources:
           FromPort: 8080
           ToPort: 8080
           SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
+      SecurityGroupEgress:
+        - Description: Allow outbound traffic to EFSMountTargetSecurityGroup
+          IpProtocol: tcp
+          FromPort: 2049
+          ToPort: 2049
+          DestinationSecurityGroupId: !Ref EFSMountTargetSecurityGroup
+        - Description: Allow outbound traffic to internet
+          IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
           Value: WP-ECS-SG
