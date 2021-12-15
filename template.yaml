@@ -382,20 +382,32 @@ Resources:
     Properties:
       FileSystemId: !Ref EFSFileSystem
       PosixUser:
-        Uid: "1001"
-        Gid: "0"
+        Uid: '1001'
+        Gid: '0'
       RootDirectory:
         CreationInfo:
-          OwnerUid: "1"
-          OwnerGid: "0"
-          Permissions: "0775"
+          OwnerUid: '1'
+          OwnerGid: '0'
+          Permissions: '0775'
         Path: /wordpress
 
   ################################### ECS ###################################
 
+  ECSLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties: 
+      LogGroupName: /aws/ecs/wp
+      RetentionInDays: 1
+
   ECSCluster:
     Type: AWS::ECS::Cluster
-    Properties: 
+    Properties:
+      Configuration:
+        ExecuteCommandConfiguration:
+          LogConfiguration: 
+            CloudWatchEncryptionEnabled: false
+            CloudWatchLogGroupName: !Ref ECSLogGroup
+          Logging: OVERRIDE
       CapacityProviders:
         - FARGATE
       ClusterName: WP-ECSCluster
@@ -447,45 +459,48 @@ Resources:
               - logs:CreateLogStream
               - logs:PutLogEvents
             Resource: '*'
-
-  ECSLogGroup:
-    Type: AWS::Logs::LogGroup
-    Properties: 
-      LogGroupName: /aws/ecs/wp
-      RetentionInDays: 1
+          - Effect: Allow
+            Action:
+              - ssmmessages:CreateControlChannel
+              - ssmmessages:CreateDataChannel
+              - ssmmessages:OpenControlChannel
+              - ssmmessages:OpenDataChannel
+            Resource: '*'
 
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
       ContainerDefinitions:
-          - Name: !FindInMap [ NameConfig, Container, Name ]
-            Image: bitnami/wordpress@sha256:b5f785010d73076b2351bffc1ccf88da2dc3ef72b3a047750adfc07b206ee5f1
-            Environment:
-              - Name: WORDPRESS_DATABASE_HOST
-                Value: !GetAtt Database.Endpoint.Address
-              - Name: WORDPRESS_DATABASE_PORT_NUMBER
-                Value: !GetAtt Database.Endpoint.Port
-              - Name: WORDPRESS_DATABASE_USER
-                Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
-              - Name: WORDPRESS_DATABASE_PASSWORD
-                Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
-              - Name: WORDPRESS_DATABASE_NAME
-                Value: !FindInMap [ NameConfig, Database, Name ]
-            LogConfiguration:
-              LogDriver: awslogs
-              Options:
-                awslogs-group: !Ref ECSLogGroup
-                awslogs-region: !Ref AWS::Region
-                awslogs-stream-prefix: wp
-            Essential: true
-            PortMappings: 
-                # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
-              - ContainerPort: 8080
-                Protocol: tcp
-            MountPoints:
-              - SourceVolume: EFS
-                ContainerPath: /bitnami
-                ReadOnly: false
+        - Name: !FindInMap [ NameConfig, Container, Name ]
+          Image: bitnami/wordpress@sha256:b5f785010d73076b2351bffc1ccf88da2dc3ef72b3a047750adfc07b206ee5f1
+          Environment:
+            - Name: WORDPRESS_DATABASE_HOST
+              Value: !GetAtt Database.Endpoint.Address
+            - Name: WORDPRESS_DATABASE_PORT_NUMBER
+              Value: !GetAtt Database.Endpoint.Port
+            - Name: WORDPRESS_DATABASE_USER
+              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+            - Name: WORDPRESS_DATABASE_PASSWORD
+              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+            - Name: WORDPRESS_DATABASE_NAME
+              Value: !FindInMap [ NameConfig, Database, Name ]
+          LinuxParameters:
+            InitProcessEnabled: true
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref ECSLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: wp
+          Essential: true
+          PortMappings:
+              # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
+            - ContainerPort: 8080
+              Protocol: tcp
+          MountPoints:
+            - SourceVolume: EFS
+              ContainerPath: /bitnami
+              ReadOnly: false
       Volumes:
         - Name: EFS
           EFSVolumeConfiguration: 
@@ -536,9 +551,10 @@ Resources:
       ServiceName: WP-ECSService
       Cluster: !Ref ECSCluster
       # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
-      DesiredCount: 0
+      DesiredCount: 1
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: FARGATE
+      EnableExecuteCommand: true
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
