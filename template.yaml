@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: ''
 
+################################### APPLICATION PARAMETERS ###################################
+
+Parameters:
+
+  AutoScalingMinCapacity:
+    Type: Number
+    Description: Specify the maximum value that you plan to scale out to.
+    Default: 1
+
+  AutoScalingMaxCapacity:
+    Type: Number
+    Description: Specify the minimum value that you plan to scale in to
+    Default: 2
+
 ################################### APPLICATION MAPPINGS ###################################
 
 Mappings:
@@ -600,6 +614,7 @@ Resources:
       ScalingTargetId: !Ref ECSServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
         PredefinedMetricSpecification:
+          # TODO: validate if this is the best metric to use
           PredefinedMetricType: ECSServiceAverageCPUUtilization
         ScaleInCooldown: 10
         ScaleOutCooldown: 10
@@ -609,8 +624,8 @@ Resources:
   ECSServiceAutoScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MinCapacity: 1
-      MaxCapacity: 2
+      MinCapacity: !Ref AutoScalingMinCapacity
+      MaxCapacity: !Ref AutoScalingMaxCapacity
       ResourceId: !Join [ '/', [ service, !Ref ECSCluster, !GetAtt ECSService.Name ] ]
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
