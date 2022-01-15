@@ -10,7 +10,7 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 ## Architecture
 
-![wordpress-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/149640954-f7667866-c252-410e-8d51-c1458bd77ab9.png)
+![wordpress-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/149641137-dcede996-8228-4f76-8f7c-59146b851e49.png)
 
 ## How to run the solution locally
 
