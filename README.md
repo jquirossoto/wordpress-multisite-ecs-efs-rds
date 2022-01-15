@@ -66,7 +66,7 @@ AutoScalingMaxCapacity=2
 ```
 composer run cf-stack-deploy
 ```
-6. :confetti_ball: Visit your Wordpress URL. To obtain the URL, run the following command. The URL is in the Outputs section.
+6. :confetti_ball: Visit your WordPress URL. To obtain the URL, run the following command. The URL is in the Outputs section.
 
 ```
 composer run cf-stack-describe
