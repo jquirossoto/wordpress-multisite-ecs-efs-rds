@@ -9,7 +9,7 @@
     "scripts": {
         "docker-up": "docker-compose -f ./docker-compose.yml up -d",
         "docker-down": "docker-compose kill",
-        "docker-run": "docker run -it -p 80:8080 -v $(pwd)/docker/wordpress:/bitnami/wordpress --rm --name='wordpress' --network=wordpress-multisite-ecs-efs-rds_wordpress-network --env-file ./docker.env bitnami/wordpress@sha256:b5f785010d73076b2351bffc1ccf88da2dc3ef72b3a047750adfc07b206ee5f1",
+        "docker-run": "docker run -it -p 80:80 -v $(pwd)/docker/wordpress:/var/www/html --rm --name='wordpress' --network=wordpress-multisite-ecs-efs-rds_wordpress-network --env-file ./wordpress.env wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a",
         "cf-stack-deploy": "aws cloudformation deploy --template-file ./template.yaml --stack-name wordpress --capabilities CAPABILITY_NAMED_IAM",
         "cf-stack-delete": "aws cloudformation delete-stack --stack-name wordpress",
         "cf-stack-describe": "aws cloudformation describe-stacks --stack-name wordpress",
