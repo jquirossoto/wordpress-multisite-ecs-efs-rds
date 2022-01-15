@@ -630,3 +630,10 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
       RoleARN: !GetAtt ECSServiceAutoScalingRole.Arn
+
+################################### APPLICATION OUTPUTS ###################################
+
+Outputs:
+  APIInvokeURL:
+    Description: API Invoke URL
+    Value: !Sub http://${LoadBalancer.DNSName}
