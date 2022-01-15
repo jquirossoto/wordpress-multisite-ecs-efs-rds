@@ -247,6 +247,7 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
 
+  # TODO: USER CUSTOM KEY. ADDITIONAL INFO: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -273,6 +274,13 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
+
+  DatabaseSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabaseSecret
+      TargetId: !Ref Database
+      TargetType: AWS::RDS::DBInstance
 
   ################################### LOAD BALANCER ###################################
 
@@ -425,6 +433,21 @@ Resources:
             Action:
               - sts:AssumeRole
 
+  ECSTaskExecutionRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: WP-ECSTaskExecutionRolePolicy
+      Roles:
+        - !Ref ECSTaskExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Ref DatabaseSecret
+
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
@@ -470,20 +493,17 @@ Resources:
         - Name: !FindInMap [ NameConfig, Container, Name ]
           Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
-              # TODO: move to secrets
-            - Name: WORDPRESS_DB_HOST
-              Value: !GetAtt Database.Endpoint.Address
-              # TODO: move to secrets
-            - Name: WORDPRESS_DB_USER
-              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
-              # TODO: move to secrets
-            - Name: WORDPRESS_DB_PASSWORD
-              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
-              # TODO: move to secrets
-            - Name: WORDPRESS_DB_NAME
-              Value: !FindInMap [ NameConfig, Database, Name ]
             - NAME: WORDPRESS_CONFIG_EXTRA
-              Value: !Sub [ "define( 'WP_HOME', 'http://${Domain}' ); define( 'WP_SITEURL', 'http://${Domain}' );", { Domain: !GetAtt LoadBalancer.DNSName } ]
+              Value: !Sub "define( 'WP_HOME', 'http://${LoadBalancer.DNSName}' ); define( 'WP_SITEURL', 'http://${LoadBalancer.DNSName}' );"
+          Secrets:
+            - Name: WORDPRESS_DB_HOST
+              ValueFrom: !Sub '${DatabaseSecret}:host::'
+            - Name: WORDPRESS_DB_NAME
+              ValueFrom: !Sub '${DatabaseSecret}:dbname::'
+            - Name: WORDPRESS_DB_USER
+              ValueFrom: !Sub '${DatabaseSecret}:username::'
+            - Name: WORDPRESS_DB_PASSWORD
+              ValueFrom: !Sub '${DatabaseSecret}:password::'
           LinuxParameters:
             InitProcessEnabled: true
           LogConfiguration:
@@ -541,7 +561,7 @@ Resources:
       ServiceName: WP-ECSService
       Cluster: !Ref ECSCluster
       # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
-      DesiredCount: 2
+      DesiredCount: 0
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: FARGATE
       EnableExecuteCommand: true
