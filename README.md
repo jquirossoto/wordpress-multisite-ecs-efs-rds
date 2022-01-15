@@ -24,7 +24,7 @@ To run the solution locally, execute the following procedure:
 composer run docker-up
 ```
 
-3. Run the Wordpress container
+3. Run the WordPress container
 
 ```
 composer run docker-run
