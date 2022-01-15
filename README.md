@@ -21,7 +21,7 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 To run the solution locally, execute the following procedure:
 
-1. Clone this repo.
+1. Clone this repo
 2. Start the database container
 
 ```
@@ -49,7 +49,7 @@ composer run docker-run
 
 To deploy and run the solution in AWS, execute the following procedure:
 
-1. Clone this repo.
+1. Clone this repo
 2. Create create a wordpress.env file in the root of the project. The contents of this file will include the parameters for the CloudFormation template:
 
 - **AutoScalingMinCapacity**: Specify the maximum value that you plan to scale out to. Default: 1
