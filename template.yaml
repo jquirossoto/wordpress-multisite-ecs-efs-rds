@@ -493,7 +493,7 @@ Resources:
         - Name: !FindInMap [ NameConfig, Container, Name ]
           Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
-            - NAME: WORDPRESS_CONFIG_EXTRA
+            - Name: WORDPRESS_CONFIG_EXTRA
               Value: !Sub "define( 'WP_HOME', 'http://${LoadBalancer.DNSName}' ); define( 'WP_SITEURL', 'http://${LoadBalancer.DNSName}' );"
           Secrets:
             - Name: WORDPRESS_DB_HOST
@@ -519,8 +519,7 @@ Resources:
               Protocol: tcp
           MountPoints:
             - SourceVolume: EFS
-              # TODO: validate if can set /var/www/html
-              ContainerPath: /var/www/html/wp-content
+              ContainerPath: /var/www/html
               ReadOnly: false
       Volumes:
         - Name: EFS
