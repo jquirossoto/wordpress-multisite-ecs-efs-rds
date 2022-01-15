@@ -8,6 +8,10 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 3. The VPC configuration might not fit your requirements.
 4. The AutoScaling policy might not fit your requirements.
 
+## Architecture
+
+![wordpress-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/149640954-f7667866-c252-410e-8d51-c1458bd77ab9.png)
+
 ## How to run the solution locally
 
 ### Things you will need
