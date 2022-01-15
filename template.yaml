@@ -1,6 +1,20 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: ''
 
+################################### APPLICATION PARAMETERS ###################################
+
+Parameters:
+
+  AutoScalingMinCapacity:
+    Type: Number
+    Description: Specify the maximum value that you plan to scale out to.
+    Default: 1
+
+  AutoScalingMaxCapacity:
+    Type: Number
+    Description: Specify the minimum value that you plan to scale in to
+    Default: 2
+
 ################################### APPLICATION MAPPINGS ###################################
 
 Mappings:
@@ -68,6 +82,8 @@ Resources:
           Value: WP-VPC-PubRT
 
   DefaultPublicRoute:
+    DependsOn:
+      - InternetGatewayAttachment
     Type: AWS::EC2::Route
     Properties:
       RouteTableId: !Ref PublicRouteTable
@@ -245,6 +261,7 @@ Resources:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
 
+  # TODO: USER CUSTOM KEY. ADDITIONAL INFO: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
@@ -271,6 +288,13 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
+
+  DatabaseSecretAttachment:
+    Type: AWS::SecretsManager::SecretTargetAttachment
+    Properties:
+      SecretId: !Ref DatabaseSecret
+      TargetId: !Ref Database
+      TargetType: AWS::RDS::DBInstance
 
   ################################### LOAD BALANCER ###################################
 
@@ -307,9 +331,8 @@ Resources:
   LoadBalancerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: WP-LB-TG
       VpcId: !Ref VPC
-      Port: 8080
+      Port: 80
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299
@@ -317,11 +340,15 @@ Resources:
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
+      HealthyThresholdCount: 10
       TargetType: ip
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
           Value: 30
+        - Key: stickiness.enabled
+          Value: true
+        - Key: stickiness.type
+          Value: lb_cookie
 
   LoadBalancerListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
@@ -355,7 +382,7 @@ Resources:
           IpProtocol: tcp
           FromPort: 2049
           ToPort: 2049
-          CidrIp: !FindInMap [ SubnetConfig, VPC, CIDR ]
+          SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
       Tags:
         - Key: Name
           Value: WP-EFS-MT-SG
@@ -365,7 +392,7 @@ Resources:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: !Ref PrivateSubnet1
+      SubnetId: !Ref PublicSubnet1
       SecurityGroups:
         - !Ref EFSMountTargetSecurityGroup
 
@@ -373,7 +400,7 @@ Resources:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: !Ref PrivateSubnet2
+      SubnetId: !Ref PublicSubnet2
       SecurityGroups:
         - !Ref EFSMountTargetSecurityGroup
 
@@ -381,15 +408,6 @@ Resources:
     Type: AWS::EFS::AccessPoint
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      PosixUser:
-        Uid: '1001'
-        Gid: '0'
-      RootDirectory:
-        CreationInfo:
-          OwnerUid: '1'
-          OwnerGid: '0'
-          Permissions: '0775'
-        Path: /wordpress
 
   ################################### ECS ###################################
 
@@ -428,6 +446,21 @@ Resources:
                 - ecs-tasks.amazonaws.com
             Action:
               - sts:AssumeRole
+
+  ECSTaskExecutionRolePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: WP-ECSTaskExecutionRolePolicy
+      Roles:
+        - !Ref ECSTaskExecutionRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - secretsmanager:GetSecretValue
+            Resource:
+              - !Ref DatabaseSecret
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -472,18 +505,19 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: !FindInMap [ NameConfig, Container, Name ]
-          Image: bitnami/wordpress@sha256:b5f785010d73076b2351bffc1ccf88da2dc3ef72b3a047750adfc07b206ee5f1
+          Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
-            - Name: WORDPRESS_DATABASE_HOST
-              Value: !GetAtt Database.Endpoint.Address
-            - Name: WORDPRESS_DATABASE_PORT_NUMBER
-              Value: !GetAtt Database.Endpoint.Port
-            - Name: WORDPRESS_DATABASE_USER
-              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
-            - Name: WORDPRESS_DATABASE_PASSWORD
-              Value: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
-            - Name: WORDPRESS_DATABASE_NAME
-              Value: !FindInMap [ NameConfig, Database, Name ]
+            - Name: WORDPRESS_CONFIG_EXTRA
+              Value: !Sub "define( 'WP_HOME', 'http://${LoadBalancer.DNSName}' ); define( 'WP_SITEURL', 'http://${LoadBalancer.DNSName}' );"
+          Secrets:
+            - Name: WORDPRESS_DB_HOST
+              ValueFrom: !Sub '${DatabaseSecret}:host::'
+            - Name: WORDPRESS_DB_NAME
+              ValueFrom: !Sub '${DatabaseSecret}:dbname::'
+            - Name: WORDPRESS_DB_USER
+              ValueFrom: !Sub '${DatabaseSecret}:username::'
+            - Name: WORDPRESS_DB_PASSWORD
+              ValueFrom: !Sub '${DatabaseSecret}:password::'
           LinuxParameters:
             InitProcessEnabled: true
           LogConfiguration:
@@ -495,11 +529,11 @@ Resources:
           Essential: true
           PortMappings:
               # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
-            - ContainerPort: 8080
+            - ContainerPort: 80
               Protocol: tcp
           MountPoints:
             - SourceVolume: EFS
-              ContainerPath: /bitnami
+              ContainerPath: /var/www/html
               ReadOnly: false
       Volumes:
         - Name: EFS
@@ -526,19 +560,8 @@ Resources:
       SecurityGroupIngress:
         - Description : Allow traffic from LoadBalancerSecurityGroup
           IpProtocol: tcp
-          FromPort: 8080
-          ToPort: 8080
-          SourceSecurityGroupId: !Ref LoadBalancerSecurityGroup
-      SecurityGroupEgress:
-        - Description: Allow outbound traffic to EFSMountTargetSecurityGroup
-          IpProtocol: tcp
-          FromPort: 2049
-          ToPort: 2049
-          DestinationSecurityGroupId: !Ref EFSMountTargetSecurityGroup
-        - Description: Allow outbound traffic to internet
-          IpProtocol: -1
-          FromPort: -1
-          ToPort: -1
+          FromPort: 80
+          ToPort: 80
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
@@ -551,7 +574,7 @@ Resources:
       ServiceName: WP-ECSService
       Cluster: !Ref ECSCluster
       # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
-      DesiredCount: 1
+      DesiredCount: 0
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: FARGATE
       EnableExecuteCommand: true
@@ -565,5 +588,45 @@ Resources:
             - !Ref PrivateSubnet2
       LoadBalancers:
         - ContainerName: !FindInMap [ NameConfig, Container, Name ]
-          ContainerPort: 8080
+          ContainerPort: 80
           TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  ################################### Application AutoScaling ###################################
+
+  ECSServiceAutoScalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ '', [ !GetAtt ECSService.Name, AutoScalingRole]]
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
+
+  ECSServiceAutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Join [ '', [ !GetAtt ECSService.Name, AutoScalingPolicy ] ]
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ECSServiceAutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          # TODO: validate if this is the best metric to use
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        ScaleInCooldown: 10
+        ScaleOutCooldown: 10
+        # Keep things at or lower than 50% CPU utilization, for example
+        TargetValue: 50
+
+  ECSServiceAutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MinCapacity: !Ref AutoScalingMinCapacity
+      MaxCapacity: !Ref AutoScalingMaxCapacity
+      ResourceId: !Join [ '/', [ service, !Ref ECSCluster, !GetAtt ECSService.Name ] ]
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      RoleARN: !GetAtt ECSServiceAutoScalingRole.Arn
