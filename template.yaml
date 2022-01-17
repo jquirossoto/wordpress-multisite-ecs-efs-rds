@@ -577,4 +577,4 @@ Resources:
 Outputs:
   URL:
     Description: WordPress URL
-    Value: !Sub http://${LoadBalancer.DNSName}
+    Value: !Sub https://${DomainName}
