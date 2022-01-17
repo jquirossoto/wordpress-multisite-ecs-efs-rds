@@ -11,11 +11,11 @@ Parameters:
 
   PrivateSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of private subnet Ids. Must be configured in different availability zones. Please, select two subnets.
+    Description: Specify a list of private subnet Ids. Must be configured in different availability zones. Please, select only two subnets.
 
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of public subnet Ids. Must be configured in different availability zones. Please, select two subnets.
+    Description: Specify a list of public subnet Ids. Must be configured in different availability zones. Please, select only two subnets.
 
   DatabaseInstanceClass:
     Type: String
