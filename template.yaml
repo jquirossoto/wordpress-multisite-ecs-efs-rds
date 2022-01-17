@@ -1,245 +1,150 @@
-AWSTemplateFormatVersion: '2010-09-09'
-Description: ''
+AWSTemplateFormatVersion: 2010-09-09
+Description: This stack deploys WordPress containers in AWS Elastic Container Service (ECS). These containers connect to Elastic File System (EFS) to persist and share the WordPress files between them and to Relational Database Service (RDS) to store the data.
 
-################################### APPLICATION PARAMETERS ###################################
+################################### STACK PARAMETERS ###################################
 
 Parameters:
 
+  VPCId:
+    Type: AWS::EC2::VPC::Id
+    Description: Specify the VPC Id to deploy to.
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Specify a list of private subnet Ids. Must be configured in different availability zones. Please, select two subnets.
+
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Specify a list of public subnet Ids. Must be configured in different availability zones. Please, select two subnets.
+
+  DatabaseInstanceClass:
+    Type: String
+    Description: Specify the database instance type.
+    Default: db.t3.micro
+    AllowedValues: [ db.t2.micro, db.t2.small, db.t2.medium, db.t2.large, db.t2.xlarge, db.t2.2xlarge, db.t3.micro, db.t3.small, db.t3.medium, db.t3.large, db.t3.xlarge, db.t3.2xlarge, db.t4g.micro, db.t4g.small, db.t4g.medium, db.t4g.large, db.t4g.xlarge, db.t4g.2xlarge, db.r3.large, db.r3.xlarge, db.r3.2xlarge, db.r3.4xlarge, db.r3.8xlarge, db.r4.large, db.r4.xlarge, db.r4.2xlarge, db.r4.4xlarge, db.r4.8xlarge, db.r4.16xlarge, db.r5.large, db.r5.xlarge, db.r5.2xlarge, db.r5.4xlarge, db.r5.8xlarge, db.r5.12xlarge, db.r5.16xlarge, db.r5.24xlarge, db.r5b.large, db.r5b.xlarge, db.r5b.2xlarge, db.r5b.4xlarge, db.r5b.8xlarge, db.r5b.12xlarge, db.r5b.16xlarge, db.r5b.24xlarge, db.r6g.large, db.r6g.xlarge, db.r6g.2xlarge, db.r6g.4xlarge, db.r6g.8xlarge, db.r6g.12xlarge, db.r6g.16xlarge, db.x2g.large, db.x2g.xlarge, db.x2g.2xlarge, db.x2g.4xlarge, db.x2g.8xlarge, db.x2g.12xlarge, db.x2g.16xlarge, db.m3.medium, db.m3.large, db.m3.xlarge, db.m3.2xlarge, db.m4.large, db.m4.xlarge, db.m4.2xlarge, db.m4.4xlarge, db.m4.10xlarge, db.m4.16xlarge, db.m5.large, db.m5.xlarge, db.m5.2xlarge, db.m5.4xlarge, db.m5.8xlarge, db.m5.12xlarge, db.m5.16xlarge, db.m5.24xlarge, db.m6g.large, db.m6g.xlarge, db.m6g.2xlarge, db.m6g.4xlarge, db.m6g.8xlarge, db.m6g.12xlarge, db.m6g.16xlarge ]
+
+  DatabaseAllocatedStorage:
+    Type: Number
+    Description: Specify the size of the database (Gb).
+    Default: 20
+    MinValue: 5
+    MaxValue: 1024
+    ConstraintDescription: must be between 5 and 1024Gb.
+
+  DatabaseMultiAZ:
+    Description: Enable multi Availability Zone deployment.
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    ConstraintDescription: must be true or false.
+
+  TaskCPU:
+    Type: Number
+    Description: Specify the number of cpu units used by the task. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinitions.html#cfn-ecs-taskdefinition-containerdefinition-cpu
+    AllowedValues: [ 256, 512, 1024, 2048, 4096 ]
+
+  TaskMemory:
+    Type: Number
+    Description: Specify the amount (in MiB) of memory used by the task. The value you choose is determined by the cpu parameter. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinitions.html#cfn-ecs-taskdefinition-containerdefinition-memory.
+    AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 29696, 30720 ]
+
+  AutoScalingMetric:
+    Type: String
+    Description: Specify the metric type.
+    AllowedValues: 
+      - ECSServiceAverageCPUUtilization
+      - ECSServiceAverageMemoryUtilization
+    Default: ECSServiceAverageCPUUtilization
+
+  AutoScalingTargetValue:
+    Type: Number
+    Description: Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU utilization, then the target value is a percent value that represents how much of the CPU can be used before scaling out.
+    Default: 75
+
   AutoScalingMinCapacity:
     Type: Number
-    Description: Specify the maximum value that you plan to scale out to.
+    Description: Specify the maximum value that you plan to scale in to.
     Default: 1
 
   AutoScalingMaxCapacity:
     Type: Number
-    Description: Specify the minimum value that you plan to scale in to
+    Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-################################### APPLICATION MAPPINGS ###################################
+################################### STACK METADATA ###################################
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Network Configuration
+        Parameters:
+          - VPCId
+          - PrivateSubnetIds
+          - PublicSubnetIds
+      - Label:
+          default: Database Configuration
+        Parameters:
+          - DatabaseInstanceClass
+          - DatabaseAllocatedStorage
+          - DatabaseMultiAZ
+      - Label:
+          default: Task Definition Configuration
+        Parameters:
+          - TaskCPU
+          - TaskMemory
+      - Label:
+          default: Auto Scaling Configuration
+        Parameters:
+          - AutoScalingMetric
+          - AutoScalingTargetValue
+          - AutoScalingMinCapacity
+          - AutoScalingMaxCapacity
+    ParameterLabels:
+      VPCId:
+        default: Which VPC should this be deployed to?
+      PrivateSubnetIds:
+        default: Which private subnets should the resouces launch to?
+      PublicSubnetIds:
+        default: Which public subnets should the resouces launch to?
+      DatabaseInstanceClass:
+        default: Which instance class should be used for the database?
+      DatabaseAllocatedStorage:
+        default: What amount of storage (in gigabytes) should be allocated to the database?
+      DatabaseMultiAZ:
+        default: Should the database be deployed in multiple availability zones?
+      TaskCPU:
+        default: How much CPU should the task use?
+      TaskMemory:
+        default: How much memory should the task use?
+      AutoScalingMetric:
+        default: What metric should be used for auto scaling?
+      AutoScalingTargetValue:
+        default: What value should the metric use to scale?
+      AutoScalingMinCapacity:
+        default: What is minimum capacity the service should scale in to?
+      AutoScalingMaxCapacity:
+        default: What is the maximum capacity the service should scale out to?
+
+################################### STACK MAPPINGS ###################################
 
 Mappings:
-
-  SubnetConfig:
-    VPC:
-      CIDR: 10.2.0.0/16
-    PublicSubnet1:
-      CIDR: 10.2.0.0/24
-    PublicSubnet2:
-      CIDR: 10.2.1.0/24
-    PrivateSubnet1:
-      CIDR: 10.2.2.0/24
-    PrivateSubnet2:
-      CIDR: 10.2.3.0/24
   
   NameConfig:
-    Database:
-      Name: wordpress
     Container:
       Name: wordpress
-    EFSVolume:
-      Name: wordpress_home
 
-################################### APPLICATION RESOURCES ###################################
+################################### STACK RESOURCES ###################################
 
 Resources:
-
-  ################################### VPC ###################################
-
-  VPC:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: !FindInMap [ SubnetConfig, VPC, CIDR ]
-      InstanceTenancy: default
-      EnableDnsHostnames: true
-      EnableDnsSupport: true
-      Tags:
-        - Key: Name
-          Value: WP-VPC
-
-  ################################### INTERNET GATEWAY ###################################
-
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Name
-          Value: WP-VPC-IG
-    
-  InternetGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref VPC
-
-  ################################## PUBLIC ROUTE TABLE ###################################
-
-  PublicRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubRT
-
-  DefaultPublicRoute:
-    DependsOn:
-      - InternetGatewayAttachment
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      GatewayId: !Ref InternetGateway
-
-  ################################### PUBLIC SUBNETS ###################################
-
-  ################################### SUBNET1 ###################################
-
-  PublicSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet1, CIDR ]
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN1
-      VpcId: !Ref VPC
-
-  PublicSubnet1RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet1
-
-  PublicSubnet1ElasticIP:
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN1-NG-EIP
-      
-  PublicSubnet1NatGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt PublicSubnet1ElasticIP.AllocationId
-      SubnetId: !Ref PublicSubnet1
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN1-NG
-
-  ################################### SUBNET2 ###################################
-
-  PublicSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
-      CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet2, CIDR ]
-      MapPublicIpOnLaunch: true
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN2
-      VpcId: !Ref VPC
-
-  PublicSubnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PublicRouteTable
-      SubnetId: !Ref PublicSubnet2
-
-  PublicSubnet2ElasticIP:
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN2-NG-EIP
-      
-  PublicSubnet2NatGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt PublicSubnet2ElasticIP.AllocationId
-      SubnetId: !Ref PublicSubnet2
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PubSN2-NG
-
-  ################################### PRIVATE SUBNETS ###################################
-
-  ################################### SUBNET1 ###################################
-
-  PrivateSubnet1:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select [ 0, !GetAZs '' ]
-      CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet1, CIDR ]
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PrivSN1
-      VpcId:
-        Ref: VPC
-
-  PrivateSubnet1RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PrivSN1-RT
-
-  PrivateSubnet1RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateSubnet1RouteTable
-      SubnetId: !Ref PrivateSubnet1
-
-  RouteToPublicSubnet1NatGateway:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateSubnet1RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref PublicSubnet1NatGateway
-
-  ################################### SUBNET2 ###################################
-
-  PrivateSubnet2:
-    Type: AWS::EC2::Subnet
-    Properties:
-      AvailabilityZone: !Select [ 1, !GetAZs '' ]
-      CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet2, CIDR ]
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PrivSN2
-      VpcId:
-        Ref: VPC
-
-  PrivateSubnet2RouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-      Tags:
-        - Key: Name
-          Value: WP-VPC-PrivSN2-RT
-
-  PrivateSubnet2RouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateSubnet2RouteTable
-      SubnetId: !Ref PrivateSubnet2
-
-  RouteToPublicSubnet2NatGateway:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateSubnet2RouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref PublicSubnet2NatGateway
 
   ################################### DATABASE ###################################
 
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: WP-Database-SG
+      GroupName: !Sub '${AWS::StackName}-Database-SG'
       GroupDescription: WP-Database-SG
       SecurityGroupIngress:
         - Description : Allow traffic from ECSServiceSecurityGroup
@@ -249,24 +154,22 @@ Resources:
           SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
       Tags:
         - Key: Name
-          Value: WP-Database-SG
-      VpcId: !Ref VPC
+          Value: !Sub '${AWS::StackName}-Database-SG'
+      VpcId: !Ref VPCId
 
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: WP-Database-SN-G
-      DBSubnetGroupDescription: WP-Database-SN-G
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
+      DBSubnetGroupName: !Sub '${AWS::StackName}-Database-SN-G'
+      DBSubnetGroupDescription: !Sub '${AWS::StackName}-Database-SN-G'
+      SubnetIds: !Ref PrivateSubnetIds
 
   # TODO: USER CUSTOM KEY. ADDITIONAL INFO: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       Description: Secret for database instance
-      Name: rds-db-credentials/wordpress
+      Name: !Sub 'rds-db-credentials/${AWS::StackName}'
       GenerateSecretString:
         SecretStringTemplate: '{"username": "wordpress"}'
         GenerateStringKey: password
@@ -275,16 +178,16 @@ Resources:
 
   Database:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Delete
     Properties:
-      DBInstanceIdentifier: wordpress
-      DBInstanceClass: db.t3.micro
-      DBName: !FindInMap [ NameConfig, Database, Name ]
+      DBInstanceIdentifier: !Sub '${AWS::StackName}-wordpress'
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      DBName: wordpress
       Engine: mysql
-      MasterUsername: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
+      MasterUsername: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
       MasterUserPassword: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      MultiAZ: !Ref DatabaseMultiAZ
       PubliclyAccessible: false
-      AllocatedStorage: 20
+      AllocatedStorage: !Ref DatabaseAllocatedStorage
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
@@ -301,8 +204,8 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: WP-LB-SG
-      GroupDescription: Wordpress LoadBalancer SecurityGroup
+      GroupName: !Sub '${AWS::StackName}-LB-SG'
+      GroupDescription: !Sub '${AWS::StackName}-LB-SG'
       SecurityGroupIngress:
         - Description: Allow traffic from the internet
           IpProtocol: tcp
@@ -311,27 +214,23 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: WP-LB-SG
-      VpcId: !Ref VPC
+          Value: !Sub '${AWS::StackName}-LB-SG'
+      VpcId: !Ref VPCId
   
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    DependsOn:
-      - InternetGatewayAttachment
     Properties:
-      Name: WP-LB
+      Name: !Sub '${AWS::StackName}-LB'
       Type: application
       Scheme: internet-facing
-      Subnets:
-        - !Ref PublicSubnet1
-        - !Ref PublicSubnet2
+      Subnets: !Ref PublicSubnetIds
       SecurityGroups:
         - !Ref LoadBalancerSecurityGroup
 
   LoadBalancerTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      VpcId: !Ref VPC
+      VpcId: !Ref VPCId
       Port: 80
       Protocol: HTTP
       Matcher:
@@ -362,21 +261,22 @@ Resources:
 
   ################################### EFS ###################################
 
+  # TODO: support multiple Throughput modes. Conditional creation
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
       Encrypted: false
       FileSystemTags:
         - Key: Name
-          Value: WP-EFS
+          Value: !Sub '${AWS::StackName}-EFS'
       PerformanceMode: generalPurpose
       ThroughputMode: bursting
 
   EFSMountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: WP-EFS-SG
-      GroupDescription: FileSystem Security Group
+      GroupName: !Sub '${AWS::StackName}-EFS-MT-SG'
+      GroupDescription: !Sub '${AWS::StackName}-EFS-SG'
       SecurityGroupIngress:
         - Description : Allow traffic from ECSServiceSecurityGroup
           IpProtocol: tcp
@@ -385,14 +285,14 @@ Resources:
           SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
       Tags:
         - Key: Name
-          Value: WP-EFS-MT-SG
-      VpcId: !Ref VPC
+          Value: !Sub '${AWS::StackName}-EFS-MT-SG'
+      VpcId: !Ref VPCId
 
   EFSMountTarget1:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: !Ref PublicSubnet1
+      SubnetId: !Select [ 0, !Ref PrivateSubnetIds ]
       SecurityGroups:
         - !Ref EFSMountTargetSecurityGroup
 
@@ -400,7 +300,7 @@ Resources:
     Type: AWS::EFS::MountTarget
     Properties:
       FileSystemId: !Ref EFSFileSystem
-      SubnetId: !Ref PublicSubnet2
+      SubnetId: !Select [ 1, !Ref PrivateSubnetIds ]
       SecurityGroups:
         - !Ref EFSMountTargetSecurityGroup
 
@@ -414,9 +314,10 @@ Resources:
   ECSLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-      LogGroupName: /aws/ecs/wp
+      LogGroupName: !Sub '/aws/ecs/${AWS::StackName}'
       RetentionInDays: 1
 
+  # TODO: enable selecting Systems Manager support. Conditional creation.
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -428,13 +329,13 @@ Resources:
           Logging: OVERRIDE
       CapacityProviders:
         - FARGATE
-      ClusterName: WP-ECSCluster
+      ClusterName: !Sub '${AWS::StackName}-ECSCluster'
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: WP-ECSTaskExecutionRole
-      Description: WP-ECSTaskExecutionRole
+      RoleName: !Sub '${AWS::StackName}-ECSTaskExecutionRole'
+      Description: !Sub '${AWS::StackName}-ECSTaskExecutionRole'
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       AssumeRolePolicyDocument:
@@ -450,7 +351,7 @@ Resources:
   ECSTaskExecutionRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: WP-ECSTaskExecutionRolePolicy
+      PolicyName: !Sub '${AWS::StackName}-ECSTaskExecutionRolePolicy'
       Roles:
         - !Ref ECSTaskExecutionRole
       PolicyDocument:
@@ -465,8 +366,8 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: WP-ECSTaskRole
-      Description: WP-ECSTaskRole
+      RoleName: !Sub '${AWS::StackName}-ECSTaskRole'
+      Description: !Sub '${AWS::StackName}-ECSTaskRole'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -480,7 +381,7 @@ Resources:
   ECSTaskRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: WP-ECSTaskRolePolicy
+      PolicyName: !Sub '${AWS::StackName}-ECSTaskRolePolicy'
       Roles:
         - !Ref ECSTaskRole
       PolicyDocument:
@@ -543,10 +444,10 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref EFSAccessPoint
             TransitEncryption: ENABLED
-      Cpu: 1024
-      Memory: 3072
+      Cpu: !Ref TaskCPU
+      Memory: !Ref TaskMemory
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
-      Family: WP-ECSTaskDefinition
+      Family: !Sub '${AWS::StackName}-ECSTaskDefinition'
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -555,8 +456,8 @@ Resources:
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: WP-ECS-SG
-      GroupDescription: WP-ECS-SG
+      GroupName: !Sub '${AWS::StackName}-ECS-SG'
+      GroupDescription: !Sub '${AWS::StackName}-ECS-SG'
       SecurityGroupIngress:
         - Description : Allow traffic from LoadBalancerSecurityGroup
           IpProtocol: tcp
@@ -565,13 +466,13 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: WP-ECS-SG
-      VpcId: !Ref VPC
+          Value: !Sub '${AWS::StackName}-ECS-SG'
+      VpcId: !Ref VPCId
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: WP-ECSService
+      ServiceName: !Sub '${AWS::StackName}-ECSService'
       Cluster: !Ref ECSCluster
       # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
       DesiredCount: 0
@@ -583,9 +484,7 @@ Resources:
           AssignPublicIp: DISABLED
           SecurityGroups:
             - !Ref ECSServiceSecurityGroup
-          Subnets:
-            - !Ref PrivateSubnet1
-            - !Ref PrivateSubnet2
+          Subnets: !Ref PrivateSubnetIds
       LoadBalancers:
         - ContainerName: !FindInMap [ NameConfig, Container, Name ]
           ContainerPort: 80
@@ -614,12 +513,8 @@ Resources:
       ScalingTargetId: !Ref ECSServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
         PredefinedMetricSpecification:
-          # TODO: validate if this is the best metric to use
-          PredefinedMetricType: ECSServiceAverageCPUUtilization
-        ScaleInCooldown: 10
-        ScaleOutCooldown: 10
-        # Keep things at or lower than 50% CPU utilization, for example
-        TargetValue: 50
+          PredefinedMetricType: !Ref AutoScalingMetric
+        TargetValue: !Ref AutoScalingTargetValue
 
   ECSServiceAutoScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
@@ -631,9 +526,9 @@ Resources:
       ServiceNamespace: ecs
       RoleARN: !GetAtt ECSServiceAutoScalingRole.Arn
 
-################################### APPLICATION OUTPUTS ###################################
+################################### STACK OUTPUTS ###################################
 
 Outputs:
-  APIInvokeURL:
-    Description: API Invoke URL
+  URL:
+    Description: WordPress URL
     Value: !Sub http://${LoadBalancer.DNSName}
