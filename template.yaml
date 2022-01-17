@@ -29,23 +29,36 @@ Parameters:
     Default: 20
     MinValue: 5
     MaxValue: 1024
-    ConstraintDescription: must be between 5 and 1024Gb.
+    ConstraintDescription: Must be between 5 and 1024Gb.
 
   DatabaseMultiAZ:
     Description: Enable multi Availability Zone deployment.
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
-    ConstraintDescription: must be true or false.
+    ConstraintDescription: Must be true or false.
+
+  # TODO: support for optional domain configuration
+  DomainName:
+    Type: String
+    Description: Specify a domain name
+    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    ConstraintDescription: Incorrect format.
+
+  DomainCertificateARN:
+    Type: String
+    Description: Specify the ARN of an ACM certificate for the domain.
+    AllowedPattern: "arn:aws:acm:.*"
+    ConstraintDescription: Incorrect format.
 
   TaskCPU:
     Type: Number
-    Description: Specify the number of cpu units used by the task. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinitions.html#cfn-ecs-taskdefinition-containerdefinition-cpu
+    Description: Specify the number of cpu units used by the task. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-cpu
     AllowedValues: [ 256, 512, 1024, 2048, 4096 ]
 
   TaskMemory:
     Type: Number
-    Description: Specify the amount (in MiB) of memory used by the task. The value you choose is determined by the cpu parameter. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ecs-taskdefinition-containerdefinitions.html#cfn-ecs-taskdefinition-containerdefinition-memory.
+    Description: Specify the amount (in MiB) of memory used by the task. The value you choose is determined by the cpu parameter. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
     AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 29696, 30720 ]
 
   AutoScalingMetric:
@@ -71,7 +84,7 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-################################### STACK METADATA ###################################
+################################## STACK METADATA ###################################
 
 Metadata:
 
@@ -89,6 +102,11 @@ Metadata:
           - DatabaseInstanceClass
           - DatabaseAllocatedStorage
           - DatabaseMultiAZ
+      - Label:
+          default: Domain Configuration
+        Parameters:
+          - DomainName
+          - DomainCertificateARN
       - Label:
           default: Task Definition Configuration
         Parameters:
@@ -114,6 +132,10 @@ Metadata:
         default: What amount of storage (in gigabytes) should be allocated to the database?
       DatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
+      DomainName:
+        default: Domain name
+      DomainCertificateARN:
+        default: Certificate ARN
       TaskCPU:
         default: How much CPU should the task use?
       TaskMemory:
@@ -207,10 +229,15 @@ Resources:
       GroupName: !Sub '${AWS::StackName}-LB-SG'
       GroupDescription: !Sub '${AWS::StackName}-LB-SG'
       SecurityGroupIngress:
-        - Description: Allow traffic from the internet
+        - Description: Allow traffic from the internet on port 80
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - Description: Allow traffic from the internet on port 443
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
@@ -249,19 +276,38 @@ Resources:
         - Key: stickiness.type
           Value: lb_cookie
 
-  LoadBalancerListener:
+  LoadBalancerHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: forward
+        - Type: redirect
+          RedirectConfig: 
+            Protocol: HTTPS
+            Port: 443
+            Host: '#{host}'
+            Path: '/#{path}'
+            Query: '#{query}'
+            StatusCode: HTTP_301
+
+  LoadBalancerHTTPSListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      Certificates:
+        - CertificateArn: !Ref DomainCertificateARN
+      DefaultActions:
+        - Type: "forward"
           TargetGroupArn: !Ref LoadBalancerTargetGroup
 
   ################################### EFS ###################################
 
-  # TODO: support multiple Throughput modes. Conditional creation
+  # TODO: support choose Throughput modes. Conditional creation
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
@@ -409,7 +455,7 @@ Resources:
           Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
-              Value: !Sub "define( 'WP_HOME', 'http://${LoadBalancer.DNSName}' ); define( 'WP_SITEURL', 'http://${LoadBalancer.DNSName}' );"
+              Value: !Sub "define( 'WP_HOME', 'https://${DomainName}' ); define( 'WP_SITEURL', 'https://${DomainName}' );"
           Secrets:
             - Name: WORDPRESS_DB_HOST
               ValueFrom: !Sub '${DatabaseSecret}:host::'
