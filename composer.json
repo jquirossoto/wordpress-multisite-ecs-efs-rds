@@ -13,6 +13,7 @@
         "cf-stack-deploy": "aws cloudformation deploy --template-file ./template.yaml --stack-name wordpress --capabilities CAPABILITY_NAMED_IAM",
         "cf-stack-delete": "aws cloudformation delete-stack --stack-name wordpress",
         "cf-stack-describe": "aws cloudformation describe-stacks --stack-name wordpress",
+        "cf-template-validate": "aws cloudformation validate-template --template-body file://template.yaml",
         "ecs-bash": "aws ecs execute-command --region us-east-1 --cluster WP-ECSCluster --container wordpress --command \"/bin/bash\" --interactive --task"
     }
 }

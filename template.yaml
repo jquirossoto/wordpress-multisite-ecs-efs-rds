@@ -49,18 +49,24 @@ Parameters:
   DatabaseMultiAZ:
     Description: Enable multi Availability Zone deployment.
     Type: String
-    Default: 'false'
-    AllowedValues: ['true', 'false']
-    ConstraintDescription: Must be true or false.
+    Default: 'Yes'
+    AllowedValues: ['Yes', 'No']
+    ConstraintDescription: Must be Yes or No.
 
-  # TODO: support for optional domain configuration
-  DomainName:
+  CustomDomainEnablement:
     Type: String
-    Description: Specify a domain name
+    Description: Specify Yes to enable a custom domain.
+    Default: 'No'
+    AllowedValues: ['Yes', 'No']
+    ConstraintDescription: Must be Yes or No.
+
+  CustomDomain:
+    Type: String
+    Description: Specify a domain name.
     AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: Incorrect format.
 
-  DomainCertificateARN:
+  CustomDomainCertificateARN:
     Type: String
     Description: Specify the ARN of an ACM certificate for the domain.
     AllowedPattern: "arn:aws:acm:.*"
@@ -105,6 +111,35 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
+################################## STACK PARAMETER RULES ###################################
+
+Rules:
+  VerifyCustomDomainEnablement:
+    RuleCondition: !Equals 
+      - !Ref CustomDomainEnablement
+      - 'Yes'
+    Assertions:
+      - Assert: !Not 
+          - !Equals 
+            - !Ref CustomDomain
+            - ''
+        AssertDescription: Domain name is mandatory if Custom domain enablement is required.
+      - Assert: !Not 
+          - !Equals 
+            - !Ref CustomDomainCertificateARN
+            - ''
+        AssertDescription: Certificate ARN is mandatory when Custom domain enablement is required.
+
+################################## STACK CONDITIONS ###################################
+
+Conditions:
+  EnableCustomDomain:
+    !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+  DisableCustomDomain:
+    !Not [ Condition: EnableCustomDomain ]
+  EnableDatabaseMultiAZDeployment:
+    !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+
 ################################## STACK METADATA ###################################
 
 Metadata:
@@ -126,8 +161,9 @@ Metadata:
       - Label:
           default: Domain Configuration
         Parameters:
-          - DomainName
-          - DomainCertificateARN
+          - CustomDomainEnablement
+          - CustomDomain
+          - CustomDomainCertificateARN
       - Label:
           default: Task Configuration
         Parameters:
@@ -153,9 +189,11 @@ Metadata:
         default: What amount of storage (in gigabytes) should be allocated to the database?
       DatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
-      DomainName:
+      CustomDomainEnablement:
+        default: Do you wish to set a custom domain name? You will need to set the domain name and certificate ARN.
+      CustomDomain:
         default: Domain name
-      DomainCertificateARN:
+      CustomDomainCertificateARN:
         default: Certificate ARN
       TaskCPU:
         default: How much CPU should the task use?
@@ -227,8 +265,8 @@ Resources:
       DBName: wordpress
       Engine: mysql
       MasterUsername: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
-      MasterUserPassword: !Join [ '', ['{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
-      MultiAZ: !Ref DatabaseMultiAZ
+      MasterUserPassword: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      MultiAZ: !If [ EnableDatabaseMultiAZDeployment, true, false ]
       PubliclyAccessible: false
       AllocatedStorage: !Ref DatabaseAllocatedStorage
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
@@ -312,16 +350,29 @@ Resources:
             Path: '/#{path}'
             Query: '#{query}'
             StatusCode: HTTP_301
-
+  
   LoadBalancerHTTPSListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: DisableCustomDomain
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-2016-08
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  LoadBalancerHTTPSListenerCustomDomain:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: EnableCustomDomain
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
       Protocol: HTTPS
       SslPolicy: ELBSecurityPolicy-2016-08
       Certificates:
-        - CertificateArn: !Ref DomainCertificateARN
+        - CertificateArn: !Ref CustomDomainCertificateARN
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref LoadBalancerTargetGroup
@@ -476,7 +527,12 @@ Resources:
           Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
-              Value: !Sub "define( 'WP_HOME', 'https://${DomainName}' ); define( 'WP_SITEURL', 'https://${DomainName}' );"
+              Value: !Sub [ 
+                "define( 'WP_HOME', 'https://${Domain}' ); define( 'WP_SITEURL', 'https://${Domain}' );", 
+                { 
+                  Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ] 
+                }
+              ]
           Secrets:
             - Name: WORDPRESS_DB_HOST
               ValueFrom: !Sub '${DatabaseSecret}:host::'
@@ -598,4 +654,4 @@ Resources:
 Outputs:
   URL:
     Description: WordPress URL
-    Value: !Sub https://${DomainName}
+    Value: !Sub [ 'https://${Domain}', { Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ] } ]
