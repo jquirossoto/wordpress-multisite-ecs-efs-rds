@@ -115,20 +115,12 @@ Parameters:
 
 Rules:
   VerifyCustomDomainEnablement:
-    RuleCondition: !Equals 
-      - !Ref CustomDomainEnablement
-      - 'Yes'
+    RuleCondition: !Equals [ !Ref CustomDomainEnablement, 'Yes']
     Assertions:
-      - Assert: !Not 
-          - !Equals 
-            - !Ref CustomDomain
-            - ''
-        AssertDescription: Domain name is mandatory if Custom domain enablement is required.
-      - Assert: !Not 
-          - !Equals 
-            - !Ref CustomDomainCertificateARN
-            - ''
-        AssertDescription: Certificate ARN is mandatory when Custom domain enablement is required.
+      - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
+        AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
+      - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
+        AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
 
 ################################## STACK CONDITIONS ###################################
 
