@@ -111,9 +111,10 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-################################## STACK PARAMETER RULES ###################################
+################################## STACK RULES ###################################
 
 Rules:
+
   VerifyCustomDomainEnablement:
     RuleCondition: !Equals [ !Ref CustomDomainEnablement, 'Yes']
     Assertions:
@@ -125,10 +126,13 @@ Rules:
 ################################## STACK CONDITIONS ###################################
 
 Conditions:
+
   EnableCustomDomain:
     !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+
   DisableCustomDomain:
     !Not [ Condition: EnableCustomDomain ]
+
   EnableDatabaseMultiAZDeployment:
     !Equals [ !Ref DatabaseMultiAZ, 'Yes' ]
 
