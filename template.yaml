@@ -130,7 +130,7 @@ Conditions:
   DisableCustomDomain:
     !Not [ Condition: EnableCustomDomain ]
   EnableDatabaseMultiAZDeployment:
-    !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+    !Equals [ !Ref DatabaseMultiAZ, 'Yes' ]
 
 ################################## STACK METADATA ###################################
 
