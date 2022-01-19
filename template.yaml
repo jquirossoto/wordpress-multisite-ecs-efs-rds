@@ -462,7 +462,6 @@ Resources:
       LogGroupName: !Sub '/aws/ecs/${AWS::StackName}'
       RetentionInDays: !Ref ECSLogRetentionPeriod
 
-  # TODO: enable selecting Systems Manager support. Conditional creation.
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
