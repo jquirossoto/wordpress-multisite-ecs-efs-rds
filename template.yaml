@@ -88,6 +88,11 @@ Parameters:
       14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 
       29696, 30720 ]
 
+  ECSLogRetentionPeriod:
+    Type: Number
+    Description: 'Specify the number of days to retain the log events'
+    AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
+
   AutoScalingMetric:
     Type: String
     Description: Specify the metric type.
@@ -161,10 +166,11 @@ Metadata:
           - CustomDomain
           - CustomDomainCertificateARN
       - Label:
-          default: Task Configuration
+          default: Container Configuration
         Parameters:
           - TaskCPU
           - TaskMemory
+          - ECSLogRetentionPeriod
       - Label:
           default: Auto Scaling Configuration
         Parameters:
@@ -195,6 +201,8 @@ Metadata:
         default: How much CPU should the task use?
       TaskMemory:
         default: How much memory should the task use?
+      ECSLogRetentionPeriod:
+        default: For how long should the log events be retained?
       AutoScalingMetric:
         default: What metric should be used for auto scaling?
       AutoScalingTargetValue:
@@ -429,7 +437,7 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties: 
       LogGroupName: !Sub '/aws/ecs/${AWS::StackName}'
-      RetentionInDays: 1
+      RetentionInDays: !Ref ECSLogRetentionPeriod
 
   # TODO: enable selecting Systems Manager support. Conditional creation.
   ECSCluster:
