@@ -63,13 +63,13 @@ Parameters:
   CustomDomain:
     Type: String
     Description: Specify a domain name.
-    AllowedPattern: (?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
+    AllowedPattern: ^$|(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: Incorrect format.
 
   CustomDomainCertificateARN:
     Type: String
     Description: Specify the ARN of an ACM certificate for the domain.
-    AllowedPattern: "arn:aws:acm:.*"
+    AllowedPattern: ^$|arn:aws:acm:.*
     ConstraintDescription: Incorrect format.
 
   TaskCPU:
@@ -333,6 +333,18 @@ Resources:
 
   LoadBalancerHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: DisableCustomDomain
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  LoadBalancerHTTPListenerCustomDomain:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: EnableCustomDomain
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
@@ -347,18 +359,6 @@ Resources:
             Query: '#{query}'
             StatusCode: HTTP_301
   
-  LoadBalancerHTTPSListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: DisableCustomDomain
-    Properties:
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 443
-      Protocol: HTTPS
-      SslPolicy: ELBSecurityPolicy-2016-08
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref LoadBalancerTargetGroup
-
   LoadBalancerHTTPSListenerCustomDomain:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Condition: EnableCustomDomain
@@ -648,6 +648,6 @@ Resources:
 ################################### STACK OUTPUTS ###################################
 
 Outputs:
-  URL:
-    Description: WordPress URL
-    Value: !Sub [ 'https://${Domain}', { Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ] } ]
+  LoadBalancerDNSName:
+    Description: Domain of the load balancer.
+    Value: !Sub 'http://${LoadBalancer.DNSName}'
