@@ -53,6 +53,13 @@ Parameters:
     AllowedValues: ['Yes', 'No']
     ConstraintDescription: Must be Yes or No.
 
+  DatabaseReadReplicaEnablement:
+    Description: Specify Yes to enable a database read replica.
+    Type: String
+    Default: 'Yes'
+    AllowedValues: ['Yes', 'No']
+    ConstraintDescription: Must be Yes or No.
+
   CustomDomainEnablement:
     Type: String
     Description: Specify Yes to enable a custom domain.
@@ -141,6 +148,9 @@ Conditions:
   EnableDatabaseMultiAZDeployment:
     !Equals [ !Ref DatabaseMultiAZ, 'Yes' ]
 
+  EnableDatabaseReadReplica:
+    !Equals [ !Ref DatabaseReadReplicaEnablement, 'Yes' ]
+
 ################################## STACK METADATA ###################################
 
 Metadata:
@@ -159,6 +169,7 @@ Metadata:
           - DatabaseInstanceClass
           - DatabaseAllocatedStorage
           - DatabaseMultiAZ
+          - DatabaseReadReplicaEnablement
       - Label:
           default: Domain Configuration
         Parameters:
@@ -191,6 +202,8 @@ Metadata:
         default: What amount of storage (in gigabytes) should be allocated to the database?
       DatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
+      DatabaseReadReplicaEnablement:
+        default: Do you wish to enable a read replica?
       CustomDomainEnablement:
         default: Do you wish to set a custom domain name? You will need to set the domain name and certificate ARN.
       CustomDomain:
@@ -276,6 +289,16 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
+  
+  DatabaseReadReplica:
+    Type: AWS::RDS::DBInstance
+    Condition: EnableDatabaseReadReplica
+    Properties:
+      SourceDBInstanceIdentifier: !Ref Database
+      DBInstanceClass: !Ref DatabaseInstanceClass
+      Tags:
+      - Key: Name
+        Value: !Sub '${AWS::StackName}-wordpress-read-replica'
 
   DatabaseSecretAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
