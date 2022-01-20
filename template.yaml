@@ -50,21 +50,21 @@ Parameters:
     Description: Enable multi Availability Zone deployment.
     Type: String
     Default: 'Yes'
-    AllowedValues: ['Yes', 'No']
+    AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   DatabaseReadReplicaEnablement:
     Description: Specify Yes to enable a database read replica.
     Type: String
     Default: 'Yes'
-    AllowedValues: ['Yes', 'No']
+    AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   CustomDomainEnablement:
     Type: String
     Description: Specify Yes to enable a custom domain.
     Default: 'No'
-    AllowedValues: ['Yes', 'No']
+    AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   CustomDomain:
@@ -97,7 +97,7 @@ Parameters:
 
   ECSLogRetentionPeriod:
     Type: Number
-    Description: 'Specify the number of days to retain the log events'
+    Description: Specify the number of days to retain the log events.
     AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
 
   AutoScalingMetric:
@@ -221,7 +221,7 @@ Metadata:
       AutoScalingTargetValue:
         default: What value should the metric use to scale?
       AutoScalingMinCapacity:
-        default: What is minimum capacity the service should scale in to?
+        default: What is the minimum capacity the service should scale in to?
       AutoScalingMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
 
@@ -297,8 +297,8 @@ Resources:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
       Tags:
-      - Key: Name
-        Value: !Sub '${AWS::StackName}-wordpress-read-replica'
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-wordpress-read-replica'
 
   DatabaseSecretAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
