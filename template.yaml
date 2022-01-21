@@ -53,7 +53,7 @@ Parameters:
     MaxValue: 65536
     ConstraintDescription: Must be between 5 and 1024Gb.
 
-  DatabaseMultiAZ:
+  EnableDatabaseMultiAZ:
     Description: Specify Yes to enable multi Availability Zone deployment.
     Type: String
     Default: 'Yes'
@@ -167,8 +167,8 @@ Conditions:
   DisableCustomDomain:
     !Not [ Condition: EnableCustomDomain ]
 
-  EnableDatabaseMultiAZDeployment:
-    !Equals [ !Ref DatabaseMultiAZ, 'Yes' ]
+  DatabaseMultiAZEnabled:
+    !Equals [ !Ref EnableDatabaseMultiAZ, 'Yes' ]
 
   DatabaseReadReplicaEnabled:
     !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
@@ -194,7 +194,7 @@ Metadata:
           - DatabaseInstanceClass
           - DatabaseAllocatedStorage
           - DatabaseMaxAllocatedStorage
-          - DatabaseMultiAZ
+          - EnableDatabaseMultiAZ
           - EnableDatabaseReadReplica
           - DatabaseSecretRotationSchedule
       - Label:
@@ -233,7 +233,7 @@ Metadata:
         default: What amount of storage (in gigabytes) should be allocated to the database?
       DatabaseMaxAllocatedStorage:
         default: What should be the maximum amount (in gigabytes) that Amazon RDS can automatically scale the storage of the database?
-      DatabaseMultiAZ:
+      EnableDatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
       EnableDatabaseReadReplica:
         default: Do you want to enable a read replica?
@@ -341,7 +341,7 @@ Resources:
       Engine: mysql
       MasterUsername: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
       MasterUserPassword: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
-      MultiAZ: !If [ EnableDatabaseMultiAZDeployment, true, false ]
+      MultiAZ: !If [ DatabaseMultiAZEnabled, true, false ]
       PubliclyAccessible: false
       AllocatedStorage: !Ref DatabaseAllocatedStorage
       MaxAllocatedStorage: !Ref DatabaseMaxAllocatedStorage
