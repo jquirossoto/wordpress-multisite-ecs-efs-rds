@@ -54,7 +54,7 @@ Parameters:
     ConstraintDescription: Must be between 5 and 1024Gb.
 
   EnableDatabaseMultiAZ:
-    Description: Specify Yes to enable multi Availability Zone deployment.
+    Description: Specify Yes to enable multi availability zone deployment.
     Type: String
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
@@ -339,8 +339,8 @@ Resources:
       DBInstanceClass: !Ref DatabaseInstanceClass
       DBName: wordpress
       Engine: mysql
-      MasterUsername: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:username}}' ]]
-      MasterUserPassword: !Join [ '', [ '{{resolve:secretsmanager:', !Ref DatabaseSecret, ':SecretString:password}}' ]]
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}'
       MultiAZ: !If [ DatabaseMultiAZEnabled, true, false ]
       PubliclyAccessible: false
       AllocatedStorage: !Ref DatabaseAllocatedStorage
