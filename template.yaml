@@ -145,6 +145,13 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
+  WordpressMultisiteEnablement:
+    Type: String
+    Description: Specify Yes to enable WordPress multisite configuration.
+    Default: 'No'
+    AllowedValues: [ 'Yes', 'No' ]
+    ConstraintDescription: Must be Yes or No.
+
 ################################## STACK RULES ###################################
 
 Rules:
@@ -181,6 +188,9 @@ Conditions:
 
   EnableDatabaseCredentialsRotation:
     !Equals [ !Ref DatabaseSecretRotationEnablement, 'Yes' ]
+
+  EnableWordpressMultisite:
+    !Equals [ !Ref WordpressMultisiteEnablement, 'Yes' ]
 
 ################################## STACK METADATA ###################################
 
@@ -223,6 +233,10 @@ Metadata:
           - AutoScalingTargetValue
           - AutoScalingMinCapacity
           - AutoScalingMaxCapacity
+      - Label:
+          default: Wordpress Configuration
+        Parameters:
+          - WordpressMultisiteEnablement
     ParameterLabels:
       VPCId:
         default: Which VPC should this be deployed to?
@@ -239,13 +253,13 @@ Metadata:
       DatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
       DatabaseReadReplicaEnablement:
-        default: Do you wish to enable a read replica?
+        default: Do you want to enable a read replica?
       DatabaseSecretRotationEnablement:
-        default: Do you wish to enable credential rotation? If enabled, you need to set the rotation schedule.
+        default: Do you want to enable credential rotation? If enabled, you need to set the rotation schedule.
       DatabaseSecretRotationSchedule:
         default: Rotation schedule
       CustomDomainEnablement:
-        default: Do you wish to set a custom domain name? If enabled, you need to set the domain name and certificate ARN.
+        default: Do you want to set a custom domain name? If enabled, you need to set the domain name and certificate ARN.
       CustomDomain:
         default: Domain name
       CustomDomainCertificateARN:
@@ -264,6 +278,8 @@ Metadata:
         default: What is the minimum capacity the service should scale in to?
       AutoScalingMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
+      WordpressMultisiteEnablement:
+        default: Do you want to set WordPress as mulsite?
 
 ################################### STACK MAPPINGS ###################################
 
@@ -301,7 +317,7 @@ Resources:
       GroupName: !Sub '${AWS::StackName}-Database-SG'
       GroupDescription: !Sub '${AWS::StackName}-Database-SG'
       SecurityGroupIngress:
-        - Description : Allow traffic from Secret Rotation Lambda
+        - Description : Allow traffic from DatabaseSecretRotationLambdaSecurityGroup
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
@@ -629,9 +645,11 @@ Resources:
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
               Value: !Sub [ 
-                "define( 'WP_HOME', 'https://${Domain}' ); define( 'WP_SITEURL', 'https://${Domain}' );", 
-                { 
-                  Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ] 
+                "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', ${AllowMultisite} );", 
+                {
+                  Protocol: !If [ EnableCustomDomain, 'https', 'http' ],
+                  Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
+                  AllowMultisite: !If [ EnableWordpressMultisite, true, false ]
                 }
               ]
           Secrets:
