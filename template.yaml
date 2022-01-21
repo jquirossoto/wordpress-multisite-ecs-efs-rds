@@ -115,7 +115,7 @@ Parameters:
     AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
     Default: 90
 
-  AutoScalingMetric:
+  ECSServiceAutoScalingMetric:
     Type: String
     Description: Specify the metric type.
     AllowedValues: 
@@ -123,17 +123,17 @@ Parameters:
       - ECSServiceAverageMemoryUtilization
     Default: ECSServiceAverageCPUUtilization
 
-  AutoScalingTargetValue:
+  ECSServiceAutoScalingTargetValue:
     Type: Number
     Description: Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU utilization, then the target value is a percent value that represents how much of the CPU can be used before scaling out.
     Default: 75
 
-  AutoScalingMinCapacity:
+  ECSServiceAutoScalingTargetMinCapacity:
     Type: Number
     Description: Specify the maximum value that you plan to scale in to.
     Default: 1
 
-  AutoScalingMaxCapacity:
+  ECSServiceAutoScalingTargetMaxCapacity:
     Type: Number
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
@@ -212,10 +212,10 @@ Metadata:
       - Label:
           default: Auto Scaling Configuration
         Parameters:
-          - AutoScalingMetric
-          - AutoScalingTargetValue
-          - AutoScalingMinCapacity
-          - AutoScalingMaxCapacity
+          - ECSServiceAutoScalingMetric
+          - ECSServiceAutoScalingTargetValue
+          - ECSServiceAutoScalingTargetMinCapacity
+          - ECSServiceAutoScalingTargetMaxCapacity
       - Label:
           default: Wordpress Configuration
         Parameters:
@@ -251,13 +251,13 @@ Metadata:
         default: How much memory should the task use?
       ECSLogRetentionPeriod:
         default: For how long should the log events be retained?
-      AutoScalingMetric:
+      ECSServiceAutoScalingMetric:
         default: What metric should be used for auto scaling?
-      AutoScalingTargetValue:
+      ECSServiceAutoScalingTargetValue:
         default: What value should the metric use to scale?
-      AutoScalingMinCapacity:
+      ECSServiceAutoScalingTargetMinCapacity:
         default: What is the minimum capacity the service should scale in to?
-      AutoScalingMaxCapacity:
+      ECSServiceAutoScalingTargetMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
       EnableWordpressMultisite:
         default: Do you want to set WordPress as multisite?
@@ -735,14 +735,14 @@ Resources:
       ScalingTargetId: !Ref ECSServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
         PredefinedMetricSpecification:
-          PredefinedMetricType: !Ref AutoScalingMetric
-        TargetValue: !Ref AutoScalingTargetValue
+          PredefinedMetricType: !Ref ECSServiceAutoScalingMetric
+        TargetValue: !Ref ECSServiceAutoScalingTargetValue
 
   ECSServiceAutoScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MinCapacity: !Ref AutoScalingMinCapacity
-      MaxCapacity: !Ref AutoScalingMaxCapacity
+      MinCapacity: !Ref ECSServiceAutoScalingTargetMinCapacity
+      MaxCapacity: !Ref ECSServiceAutoScalingTargetMaxCapacity
       ResourceId: !Join [ '/', [ service, !Ref ECSCluster, !GetAtt ECSService.Name ] ]
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
