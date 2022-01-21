@@ -68,7 +68,7 @@ Parameters:
     ConstraintDescription: Must be Yes or No.
 
   DatabaseSecretRotationSchedule:
-    Description: Specify the number of days between automatic scheduled rotations of the secret.
+    Description: Specify the number of days between automatic scheduled rotations of the database credentials.
     Type: Number
     Default: 30
     MinValue: 1
