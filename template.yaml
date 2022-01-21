@@ -238,8 +238,6 @@ Metadata:
         default: Should the database be deployed in multiple availability zones?
       DatabaseReadReplicaEnablement:
         default: Do you want to enable a read replica?
-      DatabaseSecretRotationEnablement:
-        default: Do you want to enable credential rotation? If enabled, you need to set the rotation schedule.
       DatabaseSecretRotationSchedule:
         default: Rotation schedule
       CustomDomainEnablement:
