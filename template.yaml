@@ -138,7 +138,7 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-  WordpressMultisiteEnablement:
+  EnableWordpressMultisite:
     Type: String
     Description: Specify Yes to enable WordPress multisite configuration.
     Default: 'No'
@@ -173,8 +173,8 @@ Conditions:
   DatabaseReadReplicaEnabled:
     !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
 
-  EnableWordpressMultisite:
-    !Equals [ !Ref WordpressMultisiteEnablement, 'Yes' ]
+  WordpressMultisiteEnabled:
+    !Equals [ !Ref EnableWordpressMultisite, 'Yes' ]
 
 ################################### STACK METADATA ###################################
 
@@ -219,7 +219,7 @@ Metadata:
       - Label:
           default: Wordpress Configuration
         Parameters:
-          - WordpressMultisiteEnablement
+          - EnableWordpressMultisite
     ParameterLabels:
       VPCId:
         default: Which VPC should this be deployed to?
@@ -259,7 +259,7 @@ Metadata:
         default: What is the minimum capacity the service should scale in to?
       AutoScalingMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
-      WordpressMultisiteEnablement:
+      EnableWordpressMultisite:
         default: Do you want to set WordPress as multisite?
 
 ################################### STACK MAPPINGS ###################################
@@ -629,7 +629,7 @@ Resources:
                 {
                   Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
                   Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
-                  AllowMultisite: !If [ EnableWordpressMultisite, true, false ]
+                  AllowMultisite: !If [ WordpressMultisiteEnabled, true, false ]
                 }
               ]
           Secrets:
