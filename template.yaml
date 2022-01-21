@@ -196,7 +196,6 @@ Metadata:
           - DatabaseMaxAllocatedStorage
           - DatabaseMultiAZ
           - DatabaseReadReplicaEnablement
-          - DatabaseSecretRotationEnablement
           - DatabaseSecretRotationSchedule
       - Label:
           default: Domain Configuration
