@@ -54,13 +54,13 @@ Parameters:
     ConstraintDescription: Must be between 5 and 1024Gb.
 
   DatabaseMultiAZ:
-    Description: Enable multi Availability Zone deployment.
+    Description: Specify Yes to enable multi Availability Zone deployment.
     Type: String
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
-  DatabaseReadReplicaEnablement:
+  EnableDatabaseReadReplica:
     Description: Specify Yes to enable a database read replica.
     Type: String
     Default: 'Yes'
@@ -170,8 +170,8 @@ Conditions:
   EnableDatabaseMultiAZDeployment:
     !Equals [ !Ref DatabaseMultiAZ, 'Yes' ]
 
-  EnableDatabaseReadReplica:
-    !Equals [ !Ref DatabaseReadReplicaEnablement, 'Yes' ]
+  DatabaseReadReplicaEnabled:
+    !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
 
   EnableWordpressMultisite:
     !Equals [ !Ref WordpressMultisiteEnablement, 'Yes' ]
@@ -195,7 +195,7 @@ Metadata:
           - DatabaseAllocatedStorage
           - DatabaseMaxAllocatedStorage
           - DatabaseMultiAZ
-          - DatabaseReadReplicaEnablement
+          - EnableDatabaseReadReplica
           - DatabaseSecretRotationSchedule
       - Label:
           default: Domain Configuration
@@ -235,7 +235,7 @@ Metadata:
         default: What should be the maximum amount (in gigabytes) that Amazon RDS can automatically scale the storage of the database?
       DatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
-      DatabaseReadReplicaEnablement:
+      EnableDatabaseReadReplica:
         default: Do you want to enable a read replica?
       DatabaseSecretRotationSchedule:
         default: Database credentials rotation schedule
@@ -352,7 +352,7 @@ Resources:
   
   DatabaseReadReplica:
     Type: AWS::RDS::DBInstance
-    Condition: EnableDatabaseReadReplica
+    Condition: DatabaseReadReplicaEnabled
     Properties:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
@@ -624,8 +624,8 @@ Resources:
           Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
-              Value: !Sub [ 
-                "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', ${AllowMultisite} );", 
+              Value: !Sub [
+                "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', true ); define('COOKIE_DOMAIN', $_SERVER['HTTP_HOST']);", 
                 {
                   Protocol: !If [ EnableCustomDomain, 'https', 'http' ],
                   Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
