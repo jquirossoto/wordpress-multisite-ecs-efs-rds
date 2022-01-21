@@ -1,4 +1,4 @@
-# wordpress-ecs-efs-rds
+# wordpress-multisite-ecs-efs-rds
 
 Solution that deploys WordPress containers in AWS Elastic Container Service (ECS). These containers connect to Elastic File System (EFS) to persist and share the WordPress files between them and to Relational Database Service (RDS) to store the data.
 
