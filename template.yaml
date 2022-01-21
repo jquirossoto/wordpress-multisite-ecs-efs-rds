@@ -74,7 +74,7 @@ Parameters:
     MinValue: 1
     MaxValue: 365
 
-  CustomDomainEnablement:
+  EnableCustomDomain:
     Type: String
     Description: Specify Yes to enable a custom domain.
     Default: 'No'
@@ -150,7 +150,7 @@ Parameters:
 Rules:
 
   VerifyCustomDomainEnablement:
-    RuleCondition: !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+    RuleCondition: !Equals [ !Ref EnableCustomDomain, 'Yes' ]
     Assertions:
       - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
         AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
@@ -161,11 +161,11 @@ Rules:
 
 Conditions:
 
-  EnableCustomDomain:
-    !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
+  CustomDomainEnabled:
+    !Equals [ !Ref EnableCustomDomain, 'Yes' ]
 
-  DisableCustomDomain:
-    !Not [ Condition: EnableCustomDomain ]
+  CustomDomainDisabled:
+    !Not [ Condition: CustomDomainEnabled ]
 
   DatabaseMultiAZEnabled:
     !Equals [ !Ref EnableDatabaseMultiAZ, 'Yes' ]
@@ -200,7 +200,7 @@ Metadata:
       - Label:
           default: Domain Configuration
         Parameters:
-          - CustomDomainEnablement
+          - EnableCustomDomain
           - CustomDomain
           - CustomDomainCertificateARN
       - Label:
@@ -239,7 +239,7 @@ Metadata:
         default: Do you want to enable a read replica?
       DatabaseSecretRotationSchedule:
         default: Database credentials rotation schedule
-      CustomDomainEnablement:
+      EnableCustomDomain:
         default: Do you want to set a custom domain name? If enabled, you need to set the domain name and certificate ARN.
       CustomDomain:
         default: Domain name
@@ -435,7 +435,7 @@ Resources:
 
   LoadBalancerHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: DisableCustomDomain
+    Condition: CustomDomainDisabled
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
@@ -446,7 +446,7 @@ Resources:
 
   LoadBalancerHTTPListenerCustomDomain:
     Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: EnableCustomDomain
+    Condition: CustomDomainEnabled
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
@@ -463,7 +463,7 @@ Resources:
   
   LoadBalancerHTTPSListenerCustomDomain:
     Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: EnableCustomDomain
+    Condition: CustomDomainEnabled
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 443
@@ -627,8 +627,8 @@ Resources:
               Value: !Sub [
                 "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', true ); define('COOKIE_DOMAIN', $_SERVER['HTTP_HOST']);", 
                 {
-                  Protocol: !If [ EnableCustomDomain, 'https', 'http' ],
-                  Domain: !If [ EnableCustomDomain, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
+                  Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
+                  Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
                   AllowMultisite: !If [ EnableWordpressMultisite, true, false ]
                 }
               ]
