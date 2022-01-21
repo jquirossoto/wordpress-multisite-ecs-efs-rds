@@ -157,7 +157,7 @@ Parameters:
 Rules:
 
   VerifyCustomDomainEnablement:
-    RuleCondition: !Equals [ !Ref CustomDomainEnablement, 'Yes']
+    RuleCondition: !Equals [ !Ref CustomDomainEnablement, 'Yes' ]
     Assertions:
       - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
         AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
@@ -165,7 +165,7 @@ Rules:
         AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
 
   VerifyDatabaseSecretRotationEnablement:
-    RuleCondition: !Equals [ !Ref DatabaseSecretRotationEnablement, 'Yes']
+    RuleCondition: !Equals [ !Ref DatabaseSecretRotationEnablement, 'Yes' ]
     Assertions:
       - Assert: !Not [ !Equals [ !Ref DatabaseSecretRotationSchedule, '' ] ]
         AssertDescription: Credentials rotation schedule is mandatory if database credentials rotation enablement is set to Yes.
