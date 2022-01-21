@@ -224,9 +224,9 @@ Metadata:
       VPCId:
         default: Which VPC should this be deployed to?
       PrivateSubnetIds:
-        default: Which private subnets should the resouces launch to?
+        default: To which private subnets should the resources be launched?
       PublicSubnetIds:
-        default: Which public subnets should the resouces launch to?
+        default: To which public subnets should the resources be launched?
       DatabaseInstanceClass:
         default: Which instance class should be used for the database?
       DatabaseAllocatedStorage:
