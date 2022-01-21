@@ -67,13 +67,6 @@ Parameters:
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
-  DatabaseSecretRotationEnablement:
-    Description: Specify Yes to enable a database credentials rotation.
-    Type: String
-    Default: 'Yes'
-    AllowedValues: [ 'Yes', 'No' ]
-    ConstraintDescription: Must be Yes or No.
-
   DatabaseSecretRotationSchedule:
     Description: Specify the number of days between automatic scheduled rotations of the secret.
     Type: Number
@@ -164,12 +157,6 @@ Rules:
       - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
         AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
 
-  VerifyDatabaseSecretRotationEnablement:
-    RuleCondition: !Equals [ !Ref DatabaseSecretRotationEnablement, 'Yes' ]
-    Assertions:
-      - Assert: !Not [ !Equals [ !Ref DatabaseSecretRotationSchedule, '' ] ]
-        AssertDescription: Credentials rotation schedule is mandatory if database credentials rotation enablement is set to Yes.
-
 ################################### STACK CONDITIONS ###################################
 
 Conditions:
@@ -185,9 +172,6 @@ Conditions:
 
   EnableDatabaseReadReplica:
     !Equals [ !Ref DatabaseReadReplicaEnablement, 'Yes' ]
-
-  EnableDatabaseCredentialsRotation:
-    !Equals [ !Ref DatabaseSecretRotationEnablement, 'Yes' ]
 
   EnableWordpressMultisite:
     !Equals [ !Ref WordpressMultisiteEnablement, 'Yes' ]
@@ -385,7 +369,6 @@ Resources:
 
   DatabaseSecretRotation:
     Type: AWS::SecretsManager::RotationSchedule
-    Condition: EnableDatabaseCredentialsRotation
     DependsOn:
       - DatabaseSecretAttachment
     Properties:
