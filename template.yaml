@@ -48,7 +48,7 @@ Parameters:
 
   DatabaseMaxAllocatedStorage:
     Type: Number
-    Description: Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the DB instance.
+    Description: Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the database instance.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 5 and 1024Gb.
@@ -279,12 +279,33 @@ Resources:
 
   ################################### DATABASE ###################################
 
+  DatabaseSecretRotationLambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
+      GroupDescription: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
+      SecurityGroupIngress:
+        - Description : Allow traffic from the internet
+          IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
+      VpcId: !Ref VPCId
+
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub '${AWS::StackName}-Database-SG'
-      GroupDescription: WP-Database-SG
+      GroupDescription: !Sub '${AWS::StackName}-Database-SG'
       SecurityGroupIngress:
+        - Description : Allow traffic from Secret Rotation Lambda
+          IpProtocol: tcp
+          FromPort: 3306
+          ToPort: 3306
+          SourceSecurityGroupId: !Ref DatabaseSecretRotationLambdaSecurityGroup
         - Description : Allow traffic from ECSServiceSecurityGroup
           IpProtocol: tcp
           FromPort: 3306
@@ -355,6 +376,9 @@ Resources:
       SecretId: !Ref DatabaseSecret
       HostedRotationLambda:
         RotationType: MySQLSingleUser
+        RotationLambdaName: !Sub '${AWS::StackName}-SecretsManagerRotation'
+        VpcSecurityGroupIds: !Ref DatabaseSecretRotationLambdaSecurityGroup
+        VpcSubnetIds: !Join [ ',', !Ref PrivateSubnetIds ]
       RotationRules:
         AutomaticallyAfterDays: !Ref DatabaseSecretRotationSchedule
 
