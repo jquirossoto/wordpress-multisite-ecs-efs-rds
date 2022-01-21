@@ -238,7 +238,7 @@ Metadata:
       DatabaseReadReplicaEnablement:
         default: Do you want to enable a read replica?
       DatabaseSecretRotationSchedule:
-        default: Rotation schedule
+        default: Database credentials rotation schedule
       CustomDomainEnablement:
         default: Do you want to set a custom domain name? If enabled, you need to set the domain name and certificate ARN.
       CustomDomain:
