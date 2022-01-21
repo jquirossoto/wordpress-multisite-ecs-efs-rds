@@ -295,7 +295,7 @@ Resources:
 
   ################################### DATABASE ###################################
 
-  DatabaseSecretRotationLambdaSecurityGroup:
+  DatabaseHostedSecretRotationLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
@@ -317,11 +317,11 @@ Resources:
       GroupName: !Sub '${AWS::StackName}-Database-SG'
       GroupDescription: !Sub '${AWS::StackName}-Database-SG'
       SecurityGroupIngress:
-        - Description : Allow traffic from DatabaseSecretRotationLambdaSecurityGroup
+        - Description : Allow traffic from DatabaseHostedSecretRotationLambdaSecurityGroup
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !Ref DatabaseSecretRotationLambdaSecurityGroup
+          SourceSecurityGroupId: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
         - Description : Allow traffic from ECSServiceSecurityGroup
           IpProtocol: tcp
           FromPort: 3306
@@ -393,7 +393,7 @@ Resources:
       HostedRotationLambda:
         RotationType: MySQLSingleUser
         RotationLambdaName: !Sub '${AWS::StackName}-SecretsManagerRotation'
-        VpcSecurityGroupIds: !Ref DatabaseSecretRotationLambdaSecurityGroup
+        VpcSecurityGroupIds: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
         VpcSubnetIds: !Join [ ',', !Ref PrivateSubnetIds ]
       RotationRules:
         AutomaticallyAfterDays: !Ref DatabaseSecretRotationSchedule
