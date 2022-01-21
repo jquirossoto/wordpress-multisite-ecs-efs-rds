@@ -260,7 +260,7 @@ Metadata:
       AutoScalingMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
       WordpressMultisiteEnablement:
-        default: Do you want to set WordPress as mulsite?
+        default: Do you want to set WordPress as multisite?
 
 ################################### STACK MAPPINGS ###################################
 
