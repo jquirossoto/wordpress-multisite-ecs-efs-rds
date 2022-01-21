@@ -152,7 +152,7 @@ Parameters:
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
-################################## STACK RULES ###################################
+################################### STACK RULES ###################################
 
 Rules:
 
@@ -170,7 +170,7 @@ Rules:
       - Assert: !Not [ !Equals [ !Ref DatabaseSecretRotationSchedule, '' ] ]
         AssertDescription: Credentials rotation schedule is mandatory if database credentials rotation enablement is set to Yes.
 
-################################## STACK CONDITIONS ###################################
+################################### STACK CONDITIONS ###################################
 
 Conditions:
 
@@ -192,7 +192,7 @@ Conditions:
   EnableWordpressMultisite:
     !Equals [ !Ref WordpressMultisiteEnablement, 'Yes' ]
 
-################################## STACK METADATA ###################################
+################################### STACK METADATA ###################################
 
 Metadata:
 
