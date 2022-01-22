@@ -46,14 +46,22 @@ Parameters:
     Description: Specify the size of the database (Gb).
     MinValue: 20
     MaxValue: 65536
-    ConstraintDescription: Must be between 5 and 1024Gb.
+    ConstraintDescription: Must be between 5 and 65536Gb.
 
   DatabaseMaxAllocatedStorage:
     Type: Number
     Description: Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the database instance.
     MinValue: 20
     MaxValue: 65536
-    ConstraintDescription: Must be between 5 and 1024Gb.
+    ConstraintDescription: Must be between 5 and 65536Gb.
+
+  DatabaseBackupRetentionPeriod:
+    Type: Number
+    Description: Specify the number of days for which automated backups are retained. Setting this parameter to 0 disables automated backups.
+    Default: 1
+    MinValue: 0
+    MaxValue: 35
+    ConstraintDescription: Must be between 0 and 35 days.
 
   EnableDatabaseMultiAZ:
     Description: Specify Yes to enable multi availability zone deployment.
@@ -186,6 +194,7 @@ Metadata:
           - DatabaseInstanceClass
           - DatabaseAllocatedStorage
           - DatabaseMaxAllocatedStorage
+          - DatabaseBackupRetentionPeriod
           - EnableDatabaseMultiAZ
           - EnableDatabaseReadReplica
           - DatabaseSecretRotationSchedule
@@ -221,6 +230,8 @@ Metadata:
         default: What amount of storage (in gigabytes) should be allocated to the database?
       DatabaseMaxAllocatedStorage:
         default: What should be the maximum amount (in gigabytes) that Amazon RDS can automatically scale the storage of the database?
+      DatabaseBackupRetentionPeriod:
+        default: How long should database automated backups be retained?
       EnableDatabaseMultiAZ:
         default: Should the database be deployed in multiple availability zones?
       EnableDatabaseReadReplica:
@@ -371,6 +382,7 @@ Resources:
       PubliclyAccessible: false
       AllocatedStorage: !Ref DatabaseAllocatedStorage
       MaxAllocatedStorage: !Ref DatabaseMaxAllocatedStorage
+      BackupRetentionPeriod: !Ref DatabaseBackupRetentionPeriod
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       StorageType: gp2
       StorageEncrypted: true
