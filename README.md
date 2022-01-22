@@ -6,25 +6,6 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 ![wordpress-multisite-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/150462554-d7126f41-4155-4fa2-8041-f5c26297e26a.png)
 
-## How to run the solution locally
-
-### Things you will need
-
-1. [Composer](https://getcomposer.org/download/)
-2. [Docker](https://docs.docker.com/get-docker/)
-
-To run the solution locally, execute the following procedure:
-
-1. Clone this repo
-2. Start the database container
-    ```
-    composer run docker-up
-    ```
-3. Run the WordPress container
-    ```
-    composer run docker-run
-    ```
-
 ## How to deploy solution
 
 ### Network requirements
@@ -258,3 +239,58 @@ To run the solution locally, execute the following procedure:
 ### AWS Console
 
 To deploy the solution using AWS Console, follow to this [tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
+
+### AWS CLI
+
+To deploy the solution using AWS CLI, follow these steps:
+1. Clone this repo
+2. Create a file called stack.env. Below you can find a sample of the contents of this file.
+    ```
+    VPCId=vpc-0aaa000aa00000a00
+    PrivateSubnetIds=subnet-11bbbbbbb11bb111b,subnet-222c2cc22c2cccc2c
+    PublicSubnetIds=subnet-333dd3333333d3d3d,subnet-444e444444d44d44d
+    DatabaseInstanceClass=db.t3.micro
+    DatabaseAllocatedStorage=20
+    DatabaseMaxAllocatedStorage=40
+    DatabaseBackupRetentionPeriod=5
+    EnableDatabaseMultiAZ=Yes
+    EnableDatabaseReadReplica=Yes
+    DatabaseSecretRotationSchedule=30
+    EnableEFSAutomaticBackups=Yes
+    EFSPerformanceMode=generalPurpose
+    EFSThroughputMode=bursting
+    EFSProvisionedThroughputInMibps=
+    EnableCustomDomain=No
+    CustomDomain=wp.example.com
+    CustomDomainCertificateARN=arn:aws:acm:us-east-1:111111111111:certificate/0c2189d1-b4ab-4dce-aebb-2a90b0332acd
+    ECSTaskvCPU=.5
+    ECSTaskMemory=3072
+    ECSLogRetentionPeriod=1
+    ECSServiceAutoScalingMetric=AverageCPUUtilization
+    ECSServiceAutoScalingTargetValue=80
+    ECSServiceAutoScalingTargetMinCapacity=1
+    ECSServiceAutoScalingTargetMaxCapacity=2
+    ```
+3. Deploy the stack
+    ```
+    aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <NAME YOUR STACK>
+    ```
+
+## How to run the solution locally
+
+### Things you will need
+
+1. [Composer](https://getcomposer.org/download/)
+2. [Docker](https://docs.docker.com/get-docker/)
+
+To run the solution locally, execute the following procedure:
+
+1. Clone this repo
+2. Start the database container
+    ```
+    composer run docker-up
+    ```
+3. Run the WordPress container
+    ```
+    composer run docker-run
+    ```
