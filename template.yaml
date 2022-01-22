@@ -437,7 +437,6 @@ Resources:
 
   Database:
     Type: AWS::RDS::DBInstance
-    DeletionPolicy: Delete
     Properties:
       DBInstanceIdentifier: !Sub '${AWS::StackName}-wordpress'
       DBInstanceClass: !Ref DatabaseInstanceClass
