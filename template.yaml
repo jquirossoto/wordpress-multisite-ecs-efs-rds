@@ -320,12 +320,32 @@ Resources:
       DBSubnetGroupDescription: !Sub '${AWS::StackName}-Database-SN-G'
       SubnetIds: !Ref PrivateSubnetIds
 
-  # TODO: USER CUSTOM KEY. ADDITIONAL INFO: https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html
+  DatabaseSecretKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: !Sub '${AWS::StackName}-Key-RDS'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: kms:*
+            Resource: '*'
+
+  DatabaseSecretKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${AWS::StackName}-RDS'
+      TargetKeyId: !Ref DatabaseSecretKMSKey
+
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
       Description: Secret for database instance
       Name: !Sub 'rds-db-credentials/${AWS::StackName}'
+      KmsKeyId: !Ref DatabaseSecretKMSKey
       GenerateSecretString:
         SecretStringTemplate: '{"username": "wordpress"}'
         GenerateStringKey: password
@@ -371,6 +391,7 @@ Resources:
     Properties:
       SecretId: !Ref DatabaseSecret
       HostedRotationLambda:
+        KmsKeyArn: !GetAtt DatabaseSecretKMSKey.Arn
         RotationType: MySQLSingleUser
         RotationLambdaName: !Sub '${AWS::StackName}-SecretsManagerRotation'
         VpcSecurityGroupIds: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
@@ -575,8 +596,10 @@ Resources:
           - Effect: Allow
             Action:
               - secretsmanager:GetSecretValue
+              - kms:Decrypt
             Resource:
               - !Ref DatabaseSecret
+              - !GetAtt DatabaseSecretKMSKey.Arn
 
   ECSTaskRole:
     Type: AWS::IAM::Role
