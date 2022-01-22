@@ -66,47 +66,47 @@ To run the solution locally, execute the following procedure:
         VPC:
             Type: AWS::EC2::VPC
             Properties:
-            CidrBlock: !FindInMap [ SubnetConfig, VPC, CIDR ]
-            InstanceTenancy: default
-            EnableDnsHostnames: true
-            EnableDnsSupport: true
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC'
+                CidrBlock: !FindInMap [ SubnetConfig, VPC, CIDR ]
+                InstanceTenancy: default
+                EnableDnsHostnames: true
+                EnableDnsSupport: true
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC'
 
         #################### INTERNET GATEWAY ####################
 
         InternetGateway:
             Type: AWS::EC2::InternetGateway
             Properties:
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-IG'
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-IG'
             
         InternetGatewayAttachment:
             Type: AWS::EC2::VPCGatewayAttachment
             Properties:
-            InternetGatewayId: !Ref InternetGateway
-            VpcId: !Ref VPC
+                InternetGatewayId: !Ref InternetGateway
+                VpcId: !Ref VPC
 
         #################### PUBLIC ROUTE TABLE ####################
 
         PublicRouteTable:
             Type: AWS::EC2::RouteTable
             Properties:
-            VpcId: !Ref VPC
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubRT'
+                VpcId: !Ref VPC
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubRT'
 
         DefaultPublicRoute:
             DependsOn:
-            - InternetGatewayAttachment
+                - InternetGatewayAttachment
             Type: AWS::EC2::Route
             Properties:
-            RouteTableId: !Ref PublicRouteTable
-            DestinationCidrBlock: 0.0.0.0/0
-            GatewayId: !Ref InternetGateway
+                RouteTableId: !Ref PublicRouteTable
+                DestinationCidrBlock: 0.0.0.0/0
+                GatewayId: !Ref InternetGateway
 
         #################### PUBLIC SUBNETS ####################
 
@@ -115,72 +115,72 @@ To run the solution locally, execute the following procedure:
         PublicSubnet1:
             Type: AWS::EC2::Subnet
             Properties:
-            AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet1, CIDR ]
-            MapPublicIpOnLaunch: true
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN1'
-            VpcId: !Ref VPC
+                AvailabilityZone: !Select [ 0, !GetAZs '' ]
+                CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet1, CIDR ]
+                MapPublicIpOnLaunch: true
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN1'
+                VpcId: !Ref VPC
 
         PublicSubnet1RouteTableAssociation:
             Type: AWS::EC2::SubnetRouteTableAssociation
             Properties:
-            RouteTableId: !Ref PublicRouteTable
-            SubnetId: !Ref PublicSubnet1
+                RouteTableId: !Ref PublicRouteTable
+                SubnetId: !Ref PublicSubnet1
 
         PublicSubnet1ElasticIP:
             Type: AWS::EC2::EIP
             Properties:
-            Domain: vpc
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN1-NG-EIP'
+                Domain: vpc
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN1-NG-EIP'
             
         PublicSubnet1NatGateway:
             Type: AWS::EC2::NatGateway
             Properties:
-            AllocationId: !GetAtt PublicSubnet1ElasticIP.AllocationId
-            SubnetId: !Ref PublicSubnet1
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN1-NG'
+                AllocationId: !GetAtt PublicSubnet1ElasticIP.AllocationId
+                SubnetId: !Ref PublicSubnet1
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN1-NG'
 
         #################### SUBNET2 ####################
 
         PublicSubnet2:
             Type: AWS::EC2::Subnet
             Properties:
-            AvailabilityZone: !Select [ 1, !GetAZs '' ]
-            CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet2, CIDR ]
-            MapPublicIpOnLaunch: true
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN2'
-            VpcId: !Ref VPC
+                AvailabilityZone: !Select [ 1, !GetAZs '' ]
+                CidrBlock: !FindInMap [ SubnetConfig, PublicSubnet2, CIDR ]
+                MapPublicIpOnLaunch: true
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN2'
+                VpcId: !Ref VPC
 
         PublicSubnet2RouteTableAssociation:
             Type: AWS::EC2::SubnetRouteTableAssociation
             Properties:
-            RouteTableId: !Ref PublicRouteTable
-            SubnetId: !Ref PublicSubnet2
+                RouteTableId: !Ref PublicRouteTable
+                SubnetId: !Ref PublicSubnet2
 
         PublicSubnet2ElasticIP:
             Type: AWS::EC2::EIP
             Properties:
-            Domain: vpc
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN2-NG-EIP'
+                Domain: vpc
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN2-NG-EIP'
             
         PublicSubnet2NatGateway:
             Type: AWS::EC2::NatGateway
             Properties:
-            AllocationId: !GetAtt PublicSubnet2ElasticIP.AllocationId
-            SubnetId: !Ref PublicSubnet2
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PubSN2-NG'
+                AllocationId: !GetAtt PublicSubnet2ElasticIP.AllocationId
+                SubnetId: !Ref PublicSubnet2
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PubSN2-NG'
 
         #################### PRIVATE SUBNETS ####################
 
@@ -189,68 +189,68 @@ To run the solution locally, execute the following procedure:
         PrivateSubnet1:
             Type: AWS::EC2::Subnet
             Properties:
-            AvailabilityZone: !Select [ 0, !GetAZs '' ]
-            CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet1, CIDR ]
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PrivSN1'
-            VpcId:
-                Ref: VPC
+                AvailabilityZone: !Select [ 0, !GetAZs '' ]
+                CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet1, CIDR ]
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PrivSN1'
+                VpcId:
+                    Ref: VPC
 
         PrivateSubnet1RouteTable:
             Type: AWS::EC2::RouteTable
             Properties:
-            VpcId: !Ref VPC
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PrivSN1-RT'
+                VpcId: !Ref VPC
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PrivSN1-RT'
 
         PrivateSubnet1RouteTableAssociation:
             Type: AWS::EC2::SubnetRouteTableAssociation
             Properties:
-            RouteTableId: !Ref PrivateSubnet1RouteTable
-            SubnetId: !Ref PrivateSubnet1
+                RouteTableId: !Ref PrivateSubnet1RouteTable
+                SubnetId: !Ref PrivateSubnet1
 
         RouteToPublicSubnet1NatGateway:
             Type: AWS::EC2::Route
             Properties:
-            RouteTableId: !Ref PrivateSubnet1RouteTable
-            DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref PublicSubnet1NatGateway
+                RouteTableId: !Ref PrivateSubnet1RouteTable
+                DestinationCidrBlock: 0.0.0.0/0
+                NatGatewayId: !Ref PublicSubnet1NatGateway
 
         #################### SUBNET2 ####################
 
         PrivateSubnet2:
             Type: AWS::EC2::Subnet
             Properties:
-            AvailabilityZone: !Select [ 1, !GetAZs '' ]
-            CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet2, CIDR ]
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PrivSN2'
-            VpcId:
-                Ref: VPC
+                AvailabilityZone: !Select [ 1, !GetAZs '' ]
+                CidrBlock: !FindInMap [ SubnetConfig, PrivateSubnet2, CIDR ]
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PrivSN2'
+                VpcId:
+                    Ref: VPC
 
         PrivateSubnet2RouteTable:
             Type: AWS::EC2::RouteTable
             Properties:
-            VpcId: !Ref VPC
-            Tags:
-                - Key: Name
-                Value: !Sub '${AWS::StackName}-VPC-PrivSN2-RT'
+                VpcId: !Ref VPC
+                Tags:
+                    - Key: Name
+                      Value: !Sub '${AWS::StackName}-VPC-PrivSN2-RT'
 
         PrivateSubnet2RouteTableAssociation:
             Type: AWS::EC2::SubnetRouteTableAssociation
             Properties:
-            RouteTableId: !Ref PrivateSubnet2RouteTable
-            SubnetId: !Ref PrivateSubnet2
+                RouteTableId: !Ref PrivateSubnet2RouteTable
+                SubnetId: !Ref PrivateSubnet2
 
         RouteToPublicSubnet2NatGateway:
             Type: AWS::EC2::Route
             Properties:
-            RouteTableId: !Ref PrivateSubnet2RouteTable
-            DestinationCidrBlock: 0.0.0.0/0
-            NatGatewayId: !Ref PublicSubnet2NatGateway
+                RouteTableId: !Ref PrivateSubnet2RouteTable
+                DestinationCidrBlock: 0.0.0.0/0
+                NatGatewayId: !Ref PublicSubnet2NatGateway
 
 </p>
 </details>
