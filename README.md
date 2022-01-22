@@ -260,7 +260,7 @@ To deploy the solution using AWS CLI, follow these steps:
     EFSPerformanceMode=generalPurpose
     EFSThroughputMode=bursting
     EFSProvisionedThroughputInMibps=
-    EnableCustomDomain=No
+    EnableCustomDomain=Yes
     CustomDomain=wp.example.com
     CustomDomainCertificateARN=arn:aws:acm:us-east-1:111111111111:certificate/0c2189d1-b4ab-4dce-aebb-2a90b0332acd
     ECSTaskvCPU=.5
@@ -271,6 +271,8 @@ To deploy the solution using AWS CLI, follow these steps:
     ECSServiceAutoScalingTargetMinCapacity=1
     ECSServiceAutoScalingTargetMaxCapacity=2
     ```
+    :warning: Optional parameters can be left empty.
+
 3. Deploy the stack
     ```
     aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <NAME YOUR STACK>
