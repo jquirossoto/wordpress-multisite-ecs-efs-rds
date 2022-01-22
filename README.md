@@ -41,7 +41,6 @@ To run the solution locally, execute the following procedure:
     AWSTemplateFormatVersion: '2010-09-09'
     Description: ''
 
-
     #################### STACK MAPPINGS ####################
 
     Mappings:
