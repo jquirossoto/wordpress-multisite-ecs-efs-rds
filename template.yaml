@@ -316,8 +316,8 @@ Resources:
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: !Sub '${AWS::StackName}-Database-SN-G'
-      DBSubnetGroupDescription: !Sub '${AWS::StackName}-Database-SN-G'
+      DBSubnetGroupName: !Sub '${AWS::StackName}-Database-SNG'
+      DBSubnetGroupDescription: !Sub '${AWS::StackName}-Database-SNG'
       SubnetIds: !Ref PrivateSubnetIds
 
   DatabaseSecretKMSKey:
@@ -325,7 +325,7 @@ Resources:
     Properties:
       KeyPolicy:
         Version: 2012-10-17
-        Id: !Sub '${AWS::StackName}-Key-RDS'
+        Id: !Sub '${AWS::StackName}-DBCreds-Key'
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
@@ -337,7 +337,7 @@ Resources:
   DatabaseSecretKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}-RDS'
+      AliasName: !Sub 'alias/${AWS::StackName}-DBCreds-Key'
       TargetKeyId: !Ref DatabaseSecretKMSKey
 
   DatabaseSecret:
@@ -351,6 +351,26 @@ Resources:
         GenerateStringKey: password
         PasswordLength: 15
         ExcludeCharacters: '"@/\'
+
+  DatabaseEncryptionKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: !Sub '${AWS::StackName}-DBEncry-Key'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: kms:*
+            Resource: '*'
+
+  DatabaseEncryptionKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${AWS::StackName}-DBEncry-Key'
+      TargetKeyId: !Ref DatabaseEncryptionKMSKey
 
   Database:
     Type: AWS::RDS::DBInstance
@@ -367,6 +387,8 @@ Resources:
       MaxAllocatedStorage: !Ref DatabaseMaxAllocatedStorage
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       StorageType: gp2
+      StorageEncrypted: true
+      KmsKeyId: !GetAtt DatabaseEncryptionKMSKey.Arn
       VPCSecurityGroups:
         - !Ref DatabaseSecurityGroup
   
