@@ -48,15 +48,15 @@ To run the solution locally, execute the following procedure:
 
     SubnetConfig:
         VPC:
-        CIDR: 10.2.0.0/16
+            CIDR: 10.2.0.0/16
         PublicSubnet1:
-        CIDR: 10.2.0.0/24
+            CIDR: 10.2.0.0/24
         PublicSubnet2:
-        CIDR: 10.2.1.0/24
+            CIDR: 10.2.1.0/24
         PrivateSubnet1:
-        CIDR: 10.2.2.0/24
+            CIDR: 10.2.2.0/24
         PrivateSubnet2:
-        CIDR: 10.2.3.0/24
+            CIDR: 10.2.3.0/24
 
     #################### STACK RESOURCES ####################
 
