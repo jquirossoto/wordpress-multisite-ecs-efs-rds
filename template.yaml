@@ -4,8 +4,9 @@ Description: >
   This stack deploys WordPress containers in AWS Elastic Container Service (ECS). These containers connect to 
   Elastic File System (EFS) to persist and share the WordPress files between them and to Relational Database 
   Service (RDS) to store the data. Requirements: VPC with an internet gateway, two sets of one private subnet 
-  and one public subnet that belong to different availability zones. Each public subnet with a NAT gateway and 
-  the private subnet in the respective availability zone routing internet traffic through that NAT gateway.
+  and one public subnet that belong to different availability zones. Each public subnet must have a NAT gateway 
+  attached and the private subnet in the respective availability zone must route internet traffic through that 
+  NAT gateway.
 
 ################################### STACK PARAMETERS ###################################
 
@@ -13,15 +14,15 @@ Parameters:
 
   VPCId:
     Type: AWS::EC2::VPC::Id
-    Description: Specify the VPC Id to deploy to.
+    Description: Specify the VPC Id to this deploy to.
 
   PrivateSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of private subnet Ids. Must be configured in different availability zones. Please, select only two subnets.
+    Description: Specify a list of private subnet Ids. Each private subnet must have been configured in different availability zones. Please, select only two subnets.
 
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of public subnet Ids. Must be configured in different availability zones. Please, select only two subnets.
+    Description: Specify a list of public subnet Ids. Each public subnet must have been configured in different availability zones. Please, select only two subnets.
 
   DatabaseInstanceClass:
     Type: String
@@ -85,7 +86,7 @@ Parameters:
     MaxValue: 365
 
   EnableEFSAutomaticBackups:
-    Description: Specify Yes to automatically backup your file system data.
+    Description: Specify Yes to automatically backup the file system data.
     Type: String
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
@@ -99,7 +100,7 @@ Parameters:
     ConstraintDescription: Must be generalPurpose or maxIO.
 
   EFSThroughputMode:
-    Description: Specify the throughput mode for the file system. If you set it to provisioned, you must also set a value for Provisioned Throughput.
+    Description: Specify the throughput mode of the file system. If you set it to provisioned, you must also set a Provisioned Throughput value.
     Type: String
     Default: 'bursting'
     AllowedValues: [ 'bursting', 'provisioned' ]
@@ -126,22 +127,22 @@ Parameters:
 
   CustomDomainCertificateARN:
     Type: String
-    Description: Specify the ARN of an ACM certificate for the domain.
+    Description: Specify the ARN of the ACM certificate for the custom domain.
     AllowedPattern: ^$|arn:aws:acm:.*
     ConstraintDescription: Incorrect format.
 
   TaskCPU:
     Type: Number
     Description: > 
-      Specify the number of cpu units used by the task. For more information, 
+      Specify the number of cpu units to be used by the task. For more information, 
       https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-cpu
     AllowedValues: [ 256, 512, 1024, 2048, 4096 ]
 
   TaskMemory:
     Type: Number
     Description: > 
-      Specify the amount (in MiB) of memory used by the task. The value you choose is determined by the cpu 
-      parameter. For more information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
+      Specify the amount (in MiB) of memory to be used by the task. The value you choose is determined by the cpu parameter. For more 
+      information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
     AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 
       14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 
       29696, 30720 ]
@@ -154,7 +155,7 @@ Parameters:
 
   ECSServiceAutoScalingMetric:
     Type: String
-    Description: Specify the metric type.
+    Description: Specify the auto scaling metric.
     AllowedValues: 
       - AverageCPUUtilization
       - AverageMemoryUtilization
