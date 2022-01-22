@@ -30,9 +30,9 @@ To run the solution locally, execute the following procedure:
 ### Network requirements
 
 1. VPC with an attached Internet gateway.
-2. Two sets of one public subnet and one private subnet that belong to different availability zones.
+2. Two sets of one public subnet and one private subnet. Each set must belong to different availability zones.
     - The public subnet must route internet traffic through the VPC Internet gateway.
-    - The public must have a NAT gateway attached.
+    - The public subnet must have a NAT gateway attached.
     - The private subnet must route internet traffic through the NAT gateway attached in the public subnet.
 
 <details><summary>Sample network stack</summary>
