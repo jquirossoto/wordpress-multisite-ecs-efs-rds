@@ -361,45 +361,45 @@ Resources:
   DatabaseHostedSecretRotationLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
-      GroupDescription: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
+      GroupName: !Sub ${AWS::StackName}-DBSecretRot-L-SG
+      GroupDescription: !Sub ${AWS::StackName} Database Hosted Secret Rototation Lambda Security Group.
       SecurityGroupIngress:
-        - Description : Allow traffic from the internet
+        - Description : Allow traffic from the internet on port 443.
           IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-DBSecretRot-L-SG'
+          Value: !Sub ${AWS::StackName}-DBSecretRot-L-SG
       VpcId: !Ref VPCId
 
   DatabaseSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${AWS::StackName}-Database-SG'
-      GroupDescription: !Sub '${AWS::StackName}-Database-SG'
+      GroupName: !Sub ${AWS::StackName}-Database-SG
+      GroupDescription: !Sub ${AWS::StackName} Database Security Group.
       SecurityGroupIngress:
-        - Description : Allow traffic from DatabaseHostedSecretRotationLambdaSecurityGroup
+        - Description : Allow traffic from DatabaseHostedSecretRotationLambdaSecurityGroup on port 3306.
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
           SourceSecurityGroupId: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
-        - Description : Allow traffic from ECSServiceSecurityGroup
+        - Description : Allow traffic from ECSServiceSecurityGroup on port 3306.
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
           SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-Database-SG'
+          Value: !Sub ${AWS::StackName}-Database-SG
       VpcId: !Ref VPCId
 
   DatabaseSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupName: !Sub '${AWS::StackName}-Database-SNG'
-      DBSubnetGroupDescription: !Sub '${AWS::StackName}-Database-SNG'
+      DBSubnetGroupName: !Sub ${AWS::StackName}-Database-SNG
+      DBSubnetGroupDescription: !Sub ${AWS::StackName} Database Subnet Group.
       SubnetIds: !Ref PrivateSubnetIds
 
   DatabaseSecretKMSKey:
@@ -407,7 +407,7 @@ Resources:
     Properties:
       KeyPolicy:
         Version: 2012-10-17
-        Id: !Sub '${AWS::StackName}-DBCreds-Key'
+        Id: !Sub ${AWS::StackName}-DBCreds-Key
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
@@ -419,13 +419,13 @@ Resources:
   DatabaseSecretKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}-DBCreds-Key'
+      AliasName: !Sub alias/${AWS::StackName}-DBCreds-Key
       TargetKeyId: !Ref DatabaseSecretKMSKey
 
   DatabaseSecret:
     Type: AWS::SecretsManager::Secret
     Properties:
-      Description: Secret for database instance
+      Description: !Sub ${AWS::StackName} Database credentials secret.
       Name: !Sub 'rds-db-credentials/${AWS::StackName}'
       KmsKeyId: !Ref DatabaseSecretKMSKey
       GenerateSecretString:
@@ -439,7 +439,7 @@ Resources:
     Properties:
       KeyPolicy:
         Version: 2012-10-17
-        Id: !Sub '${AWS::StackName}-DBEncry-Key'
+        Id: !Sub ${AWS::StackName}-DBEncry-Key
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
@@ -451,13 +451,13 @@ Resources:
   DatabaseEncryptionKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}-DBEncry-Key'
+      AliasName: !Sub alias/${AWS::StackName}-DBEncry-Key
       TargetKeyId: !Ref DatabaseEncryptionKMSKey
 
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBInstanceIdentifier: !Sub '${AWS::StackName}-wordpress'
+      DBInstanceIdentifier: !Sub ${AWS::StackName}-wordpress
       DBInstanceClass: !Ref DatabaseInstanceClass
       DBName: wordpress
       Engine: mysql
