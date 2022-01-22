@@ -132,7 +132,7 @@ Parameters:
     AllowedPattern: ^$|arn:aws:acm:.*
     ConstraintDescription: Incorrect format.
 
-  TaskvCPU:
+  ECSTaskvCPU:
     Type: String
     Description: > 
       Specify the amount of vCPU to be used by the task. For more information, 
@@ -140,7 +140,7 @@ Parameters:
     AllowedValues: [ '.25', '.5', '1', '2', '4' ]
     ConstraintDescription: Must be .25, .5, 1, 2 or 4.
 
-  TaskMemory:
+  ECSTaskMemory:
     Type: Number
     Description: > 
       Specify the amount (in MiB) of memory to be used by the task. The value you choose is determined by the cpu parameter. For more 
@@ -221,8 +221,8 @@ Metadata:
       - Label:
           default: Container Configuration
         Parameters:
-          - TaskvCPU
-          - TaskMemory
+          - ECSTaskvCPU
+          - ECSTaskMemory
           - ECSLogRetentionPeriod
       - Label:
           default: Auto Scaling Configuration
@@ -266,9 +266,9 @@ Metadata:
         default: Domain name
       CustomDomainCertificateARN:
         default: Certificate ARN
-      TaskvCPU:
+      ECSTaskvCPU:
         default: How much vCPU should the task use?
-      TaskMemory:
+      ECSTaskMemory:
         default: How much memory should the task use?
       ECSLogRetentionPeriod:
         default: How long should the log events be retained?
@@ -816,8 +816,8 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref EFSAccessPoint
             TransitEncryption: ENABLED
-      Cpu: !FindInMap [ CPUUnits, !Ref TaskvCPU, Units ]
-      Memory: !Ref TaskMemory
+      Cpu: !FindInMap [ CPUUnits, !Ref ECSTaskvCPU, Units ]
+      Memory: !Ref ECSTaskMemory
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
       Family: !Sub ${AWS::StackName}-ECSTaskDefinition
       NetworkMode: awsvpc
