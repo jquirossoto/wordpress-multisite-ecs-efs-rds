@@ -477,6 +477,7 @@ Resources:
     Properties:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
+      StorageType: gp2
 
   DatabaseSecretAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
