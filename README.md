@@ -6,7 +6,7 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 ![wordpress-multisite-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/150462554-d7126f41-4155-4fa2-8041-f5c26297e26a.png)
 
-## How to deploy solution
+## How to deploy the solution
 
 ### Network requirements
 
