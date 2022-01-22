@@ -680,7 +680,6 @@ Resources:
               awslogs-stream-prefix: wp
           Essential: true
           PortMappings:
-              # For task definitions that use the awsvpc network mode, you should only specify the containerPort. The hostPort can be left blank or it must be the same value as the containerPort.
             - ContainerPort: 80
               Protocol: tcp
           MountPoints:
