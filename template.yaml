@@ -65,50 +65,51 @@ Parameters:
     ConstraintDescription: Must be between 0 and 35 days.
 
   EnableDatabaseMultiAZ:
-    Description: Specify Yes to enable multi availability zone deployment.
     Type: String
+    Description: Specify Yes to enable multi availability zone deployment.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   EnableDatabaseReadReplica:
-    Description: Specify Yes to enable a database read replica.
     Type: String
+    Description: Specify Yes to enable a database read replica.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   DatabaseSecretRotationSchedule:
-    Description: Specify the number of days between automatic scheduled rotations of the database credentials.
     Type: Number
+    Description: Specify the number of days between automatic scheduled rotations of the database credentials.
     Default: 30
     MinValue: 1
     MaxValue: 365
+    ConstraintDescription: Must be between 1 and 365.
 
   EnableEFSAutomaticBackups:
-    Description: Specify Yes to automatically backup the file system data.
     Type: String
+    Description: Specify Yes to automatically backup the file system data.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   EFSPerformanceMode:
-    Description: Specify the performance mode of the file system.
     Type: String
+    Description: Specify the performance mode of the file system.
     Default: 'generalPurpose'
     AllowedValues: [ 'generalPurpose', 'maxIO' ]
     ConstraintDescription: Must be generalPurpose or maxIO.
 
   EFSThroughputMode:
-    Description: Specify the throughput mode of the file system. If you set it to provisioned, you must also set a Provisioned Throughput value.
     Type: String
+    Description: Specify the throughput mode of the file system. If you set it to provisioned, you must also set a Provisioned Throughput value.
     Default: 'bursting'
     AllowedValues: [ 'bursting', 'provisioned' ]
     ConstraintDescription: Must be bursting or provisioned.
 
   EFSProvisionedThroughputInMibps:
-    Description: Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
     Type: String
+    Description: Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
     AllowedPattern: ^$|[0-9]{1,4}
     ConstraintDescription: Must be either empty or a number between 1 and 1024.
 
@@ -131,12 +132,13 @@ Parameters:
     AllowedPattern: ^$|arn:aws:acm:.*
     ConstraintDescription: Incorrect format.
 
-  TaskCPU:
-    Type: Number
+  TaskvCPU:
+    Type: String
     Description: > 
-      Specify the number of cpu units to be used by the task. For more information, 
+      Specify the amount of vCPU to be used by the task. For more information, 
       https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-cpu
-    AllowedValues: [ 256, 512, 1024, 2048, 4096 ]
+    AllowedValues: [ '.25', '.5', '1', '2', '4' ]
+    ConstraintDescription: Must be .25, .5, 1, 2 or 4.
 
   TaskMemory:
     Type: Number
@@ -146,25 +148,29 @@ Parameters:
     AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 
       14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 
       29696, 30720 ]
+    ConstraintDescription: >
+      Must be 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 15360, 16384, 17408, 
+      18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 29696 or 30720.
 
   ECSLogRetentionPeriod:
     Type: Number
     Description: Specify the number of days to retain the log events.
-    AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
     Default: 90
+    AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
+    ConstraintDescription: Must be 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827 or 3653.
 
   ECSServiceAutoScalingMetric:
     Type: String
     Description: Specify the auto scaling metric.
-    AllowedValues: 
-      - AverageCPUUtilization
-      - AverageMemoryUtilization
-      - RequestCountPerTarget
+    AllowedValues: [ AverageCPUUtilization, AverageMemoryUtilization, RequestCountPerTarget ]
     Default: AverageCPUUtilization
+    ConstraintDescription: Must be AverageCPUUtilization, AverageMemoryUtilization or RequestCountPerTarget.
 
   ECSServiceAutoScalingTargetValue:
     Type: Number
-    Description: Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU utilization, then the target value is a percent value that represents how much of the CPU can be used before scaling out.
+    Description: >
+      Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU utilization, 
+      then the target value is a percent value that represents how much of the CPU can be used before scaling out.
     Default: 75
 
   ECSServiceAutoScalingTargetMinCapacity:
@@ -215,7 +221,7 @@ Metadata:
       - Label:
           default: Container Configuration
         Parameters:
-          - TaskCPU
+          - TaskvCPU
           - TaskMemory
           - ECSLogRetentionPeriod
       - Label:
@@ -260,8 +266,8 @@ Metadata:
         default: Domain name
       CustomDomainCertificateARN:
         default: Certificate ARN
-      TaskCPU:
-        default: How much CPU should the task use?
+      TaskvCPU:
+        default: How much vCPU should the task use?
       TaskMemory:
         default: How much memory should the task use?
       ECSLogRetentionPeriod:
@@ -325,6 +331,18 @@ Mappings:
   NameConfig:
     Container:
       Name: wordpress
+
+  CPUUnits:
+    '.25':
+      Units: 256
+    '.5':
+      Units: 512
+    '1':
+      Units: 1024
+    '2': 
+      Units: 2048
+    '4':
+      Units: 4096
 
   ECSServiceAutoScalingMetrics:
     AverageCPUUtilization:
@@ -798,7 +816,7 @@ Resources:
             AuthorizationConfig:
               AccessPointId: !Ref EFSAccessPoint
             TransitEncryption: ENABLED
-      Cpu: !Ref TaskCPU
+      Cpu: !FindInMap [ CPUUnits, !Ref TaskvCPU, Units ]
       Memory: !Ref TaskMemory
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
       Family: !Sub '${AWS::StackName}-ECSTaskDefinition'
