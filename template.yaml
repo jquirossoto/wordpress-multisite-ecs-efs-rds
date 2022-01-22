@@ -498,7 +498,7 @@ Resources:
       HostedRotationLambda:
         KmsKeyArn: !GetAtt DatabaseSecretKMSKey.Arn
         RotationType: MySQLSingleUser
-        RotationLambdaName: !Sub '${AWS::StackName}-SecretsManagerRotation'
+        RotationLambdaName: !Sub ${AWS::StackName}-SecretsManagerRotation
         VpcSecurityGroupIds: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
         VpcSubnetIds: !Join [ ',', !Ref PrivateSubnetIds ]
       RotationRules:
