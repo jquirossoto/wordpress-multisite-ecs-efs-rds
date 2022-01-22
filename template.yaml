@@ -609,19 +609,19 @@ Resources:
     Properties:
       KeyPolicy:
         Version: 2012-10-17
-        Id: !Sub '${AWS::StackName}-EFSEncry-Key'
+        Id: !Sub ${AWS::StackName}-EFSEncry-Key
         Statement:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
             Action: kms:*
             Resource: '*'
 
   EFSFileSystemEncryptionKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
-      AliasName: !Sub 'alias/${AWS::StackName}-EFSEncry-Key'
+      AliasName: !Sub alias/${AWS::StackName}-EFSEncry-Key
       TargetKeyId: !Ref EFSFileSystemEncryptionKMSKey
 
   EFSFileSystem:
@@ -631,7 +631,7 @@ Resources:
       KmsKeyId: !Ref EFSFileSystemEncryptionKMSKey
       FileSystemTags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-EFS'
+          Value: !Sub ${AWS::StackName}-EFS
       BackupPolicy:
         Status: !If [ EFSAutomaticBackupsEnabled, ENABLED, DISABLED ]
       PerformanceMode: !Ref EFSPerformanceMode
@@ -641,17 +641,17 @@ Resources:
   EFSMountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${AWS::StackName}-EFS-MT-SG'
-      GroupDescription: !Sub '${AWS::StackName}-EFS-MT-SG'
+      GroupName: !Sub ${AWS::StackName}-EFS-MT-SG
+      GroupDescription: !Sub ${AWS::StackName} EFS Mount Target Security Group.
       SecurityGroupIngress:
-        - Description : Allow traffic from ECSServiceSecurityGroup
+        - Description : Allow traffic from ECSServiceSecurityGroup on port 2049.
           IpProtocol: tcp
           FromPort: 2049
           ToPort: 2049
           SourceSecurityGroupId: !Ref ECSServiceSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-EFS-MT-SG'
+          Value: !Sub ${AWS::StackName}-EFS-MT-SG
       VpcId: !Ref VPCId
 
   EFSMountTarget1:
