@@ -258,4 +258,4 @@ To run the solution locally, execute the following procedure:
 
 ### AWS Console
 
-To deploy the solution using AWS Console, refer to this [tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
+To deploy the solution using AWS Console, follow to this [tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
