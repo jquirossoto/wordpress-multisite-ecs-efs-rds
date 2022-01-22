@@ -3,7 +3,9 @@ Transform: AWS::SecretsManager-2020-07-23
 Description: > 
   This stack deploys WordPress containers in AWS Elastic Container Service (ECS). These containers connect to 
   Elastic File System (EFS) to persist and share the WordPress files between them and to Relational Database 
-  Service (RDS) to store the data.
+  Service (RDS) to store the data. Requirements: VPC with internet gateway, 2 sets of 1 private and 1 public subnet
+  belonging to different availability zones. Each public subnet with a NAT gateway and their respective private subnet
+  routing internet traffic through the NAT gateway in the public subnet.
 
 ################################### STACK PARAMETERS ###################################
 
