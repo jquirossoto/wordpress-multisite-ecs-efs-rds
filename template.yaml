@@ -509,28 +509,28 @@ Resources:
   LoadBalancerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${AWS::StackName}-LB-SG'
-      GroupDescription: !Sub '${AWS::StackName}-LB-SG'
+      GroupName: !Sub ${AWS::StackName}-LB-SG
+      GroupDescription: !Sub ${AWS::StackName} Load Balancer Security Group.
       SecurityGroupIngress:
-        - Description: Allow traffic from the internet on port 80
+        - Description: Allow traffic from the internet on port 80.
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
-        - Description: Allow traffic from the internet on port 443
+        - Description: Allow traffic from the internet on port 443.
           IpProtocol: tcp
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-LB-SG'
+          Value: !Sub ${AWS::StackName}-LB-SG
       VpcId: !Ref VPCId
   
   LoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub '${AWS::StackName}-LB'
+      Name: !Sub ${AWS::StackName}-LB
       Type: application
       Scheme: internet-facing
       Subnets: !Ref PublicSubnetIds
