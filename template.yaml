@@ -156,9 +156,10 @@ Parameters:
     Type: String
     Description: Specify the metric type.
     AllowedValues: 
-      - ECSServiceAverageCPUUtilization
-      - ECSServiceAverageMemoryUtilization
-    Default: ECSServiceAverageCPUUtilization
+      - AverageCPUUtilization
+      - AverageMemoryUtilization
+      - RequestCountPerTarget
+    Default: AverageCPUUtilization
 
   ECSServiceAutoScalingTargetValue:
     Type: Number
@@ -313,6 +314,9 @@ Conditions:
   CustomDomainDisabled:
     !Not [ Condition: CustomDomainEnabled ]
 
+  ECSServiceAutoScalingMetricRequestCountPerTargetEnabled:
+    !Equals [ !Ref ECSServiceAutoScalingMetric, 'RequestCountPerTarget' ]
+
 ################################### STACK MAPPINGS ###################################
 
 Mappings:
@@ -320,6 +324,14 @@ Mappings:
   NameConfig:
     Container:
       Name: wordpress
+
+  ECSServiceAutoScalingMetrics:
+    AverageCPUUtilization:
+      Metric: ECSServiceAverageCPUUtilization
+    AverageMemoryUtilization:
+      Metric: ECSServiceAverageMemoryUtilization
+    RequestCountPerTarget:
+      Metric: ALBRequestCountPerTarget
 
 ################################### STACK RESOURCES ###################################
 
@@ -573,7 +585,6 @@ Resources:
           TargetGroupArn: !Ref LoadBalancerTargetGroup
 
   ################################### EFS ###################################
-
 
   EFSFileSystemEncryptionKMSKey:
     Type: AWS::KMS::Key
@@ -856,7 +867,8 @@ Resources:
       ScalingTargetId: !Ref ECSServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
         PredefinedMetricSpecification:
-          PredefinedMetricType: !Ref ECSServiceAutoScalingMetric
+          PredefinedMetricType: !FindInMap [ ECSServiceAutoScalingMetrics, !Ref ECSServiceAutoScalingMetric, Metric ]
+          ResourceLabel: !If [ ECSServiceAutoScalingMetricRequestCountPerTargetEnabled, !Join [ '/', [ !GetAtt LoadBalancer.LoadBalancerFullName, !GetAtt LoadBalancerTargetGroup.TargetGroupFullName  ] ], !Ref AWS::NoValue ]
         TargetValue: !Ref ECSServiceAutoScalingTargetValue
 
   ECSServiceAutoScalingTarget:
