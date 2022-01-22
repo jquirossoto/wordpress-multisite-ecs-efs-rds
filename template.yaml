@@ -462,11 +462,12 @@ Resources:
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299
-      HealthCheckIntervalSeconds: 10
+      HealthCheckIntervalSeconds: 30
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 10
+      HealthyThresholdCount: 5
+      UnhealthyThresholdCount: 10
       TargetType: ip
       TargetGroupAttributes:
         - Key: deregistration_delay.timeout_seconds
@@ -524,7 +525,7 @@ Resources:
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
-      Encrypted: false
+      Encrypted: true
       FileSystemTags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-EFS'
