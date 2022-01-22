@@ -232,7 +232,7 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
                 RouteTableId: !Ref PrivateSubnet2RouteTable
                 DestinationCidrBlock: 0.0.0.0/0
                 NatGatewayId: !Ref PublicSubnet2NatGateway
-                
+
 </details>
 
 ### AWS Console
@@ -281,17 +281,16 @@ To deploy the solution using AWS CLI, follow these steps:
 
 ### Things you will need
 
-1. [Composer](https://getcomposer.org/download/)
-2. [Docker](https://docs.docker.com/get-docker/)
+1. [Docker](https://docs.docker.com/get-docker/)
 
 To run the solution locally, execute the following procedure:
 
 1. Clone this repo
 2. Start the database container
     ```
-    composer run docker-up
+    docker-compose -f ./docker-compose.yml up -d
     ```
 3. Run the WordPress container
     ```
-    composer run docker-run
+    docker run -it -p 80:80 -v $(pwd)/docker/wordpress:/var/www/html --rm --name='wordpress' --network=wordpress-multisite-ecs-efs-rds_wordpress-network --env-file ./wordpress.env wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
     ```
