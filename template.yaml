@@ -777,7 +777,7 @@ Resources:
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
               Value: !Sub [
-                "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', true ); define('COOKIE_DOMAIN', $_SERVER['HTTP_HOST']);", 
+                'define( "WP_HOME", "${Protocol}://${Domain}" ); define( "WP_SITEURL", "${Protocol}://${Domain}" ); define("WP_ALLOW_MULTISITE", true ); define("COOKIE_DOMAIN", $_SERVER["HTTP_HOST"]);', 
                 {
                   Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
                   Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ]
