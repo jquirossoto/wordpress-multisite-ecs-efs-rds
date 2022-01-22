@@ -680,7 +680,7 @@ Resources:
   ECSLogGroup:
     Type: AWS::Logs::LogGroup
     Properties: 
-      LogGroupName: !Sub '/aws/ecs/${AWS::StackName}'
+      LogGroupName: !Sub /aws/ecs/${AWS::StackName}
       RetentionInDays: !Ref ECSLogRetentionPeriod
 
   ECSCluster:
@@ -694,13 +694,13 @@ Resources:
           Logging: OVERRIDE
       CapacityProviders:
         - FARGATE
-      ClusterName: !Sub '${AWS::StackName}-ECSCluster'
+      ClusterName: !Sub ${AWS::StackName}-ECSCluster
 
   ECSTaskExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AWS::StackName}-ECSTaskExecutionRole'
-      Description: !Sub '${AWS::StackName}-ECSTaskExecutionRole'
+      RoleName: !Sub ${AWS::StackName}-ECSTaskExecutionRole
+      Description: !Sub ${AWS::StackName} ECS Task Execution Role.
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       AssumeRolePolicyDocument:
@@ -716,7 +716,7 @@ Resources:
   ECSTaskExecutionRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}-ECSTaskExecutionRolePolicy'
+      PolicyName: !Sub ${AWS::StackName}-ECSTaskExecutionRolePolicy
       Roles:
         - !Ref ECSTaskExecutionRole
       PolicyDocument:
@@ -733,8 +733,8 @@ Resources:
   ECSTaskRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub '${AWS::StackName}-ECSTaskRole'
-      Description: !Sub '${AWS::StackName}-ECSTaskRole'
+      RoleName: !Sub ${AWS::StackName}-ECSTaskRole
+      Description: !Sub ${AWS::StackName} ECS Task Role.
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -748,7 +748,7 @@ Resources:
   ECSTaskRolePolicy:
     Type: AWS::IAM::Policy
     Properties:
-      PolicyName: !Sub '${AWS::StackName}-ECSTaskRolePolicy'
+      PolicyName: !Sub ${AWS::StackName}-ECSTaskRolePolicy
       Roles:
         - !Ref ECSTaskRole
       PolicyDocument:
@@ -819,7 +819,7 @@ Resources:
       Cpu: !FindInMap [ CPUUnits, !Ref TaskvCPU, Units ]
       Memory: !Ref TaskMemory
       ExecutionRoleArn: !Ref ECSTaskExecutionRole
-      Family: !Sub '${AWS::StackName}-ECSTaskDefinition'
+      Family: !Sub ${AWS::StackName}-ECSTaskDefinition
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
@@ -828,23 +828,23 @@ Resources:
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub '${AWS::StackName}-ECS-SG'
-      GroupDescription: !Sub '${AWS::StackName}-ECS-SG'
+      GroupName: !Sub ${AWS::StackName}-ECS-Service-SG
+      GroupDescription: !Sub ${AWS::StackName} ECS Service Security Group.
       SecurityGroupIngress:
-        - Description : Allow traffic from LoadBalancerSecurityGroup
+        - Description : Allow traffic from LoadBalancerSecurityGroup on port 80.
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub '${AWS::StackName}-ECS-SG'
+          Value: !Sub ${AWS::StackName}-ECS-SG
       VpcId: !Ref VPCId
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub '${AWS::StackName}-ECSService'
+      ServiceName: !Sub ${AWS::StackName}-ECSService
       Cluster: !Ref ECSCluster
       # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
       DesiredCount: 0
@@ -873,7 +873,7 @@ Resources:
           - Effect: Allow
             Principal:
               Service: ecs-tasks.amazonaws.com
-            Action: 'sts:AssumeRole'
+            Action: sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonEC2ContainerServiceAutoscaleRole
 
@@ -904,4 +904,4 @@ Resources:
 Outputs:
   LoadBalancerDNSName:
     Description: Domain of the load balancer.
-    Value: !Sub 'http://${LoadBalancer.DNSName}'
+    Value: !Sub http://${LoadBalancer.DNSName}
