@@ -138,13 +138,6 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-  EnableWordpressMultisite:
-    Type: String
-    Description: Specify Yes to enable WordPress multisite configuration.
-    Default: 'No'
-    AllowedValues: [ 'Yes', 'No' ]
-    ConstraintDescription: Must be Yes or No.
-
 ################################### STACK RULES ###################################
 
 Rules:
@@ -172,9 +165,6 @@ Conditions:
 
   DatabaseReadReplicaEnabled:
     !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
-
-  WordpressMultisiteEnabled:
-    !Equals [ !Ref EnableWordpressMultisite, 'Yes' ]
 
 ################################### STACK METADATA ###################################
 
@@ -216,10 +206,6 @@ Metadata:
           - ECSServiceAutoScalingTargetValue
           - ECSServiceAutoScalingTargetMinCapacity
           - ECSServiceAutoScalingTargetMaxCapacity
-      - Label:
-          default: Wordpress Configuration
-        Parameters:
-          - EnableWordpressMultisite
     ParameterLabels:
       VPCId:
         default: Which VPC should this be deployed to?
@@ -259,8 +245,6 @@ Metadata:
         default: What is the minimum capacity the service should scale in to?
       ECSServiceAutoScalingTargetMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
-      EnableWordpressMultisite:
-        default: Do you want to set WordPress as multisite?
 
 ################################### STACK MAPPINGS ###################################
 
@@ -674,8 +658,7 @@ Resources:
                 "define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', true ); define('COOKIE_DOMAIN', $_SERVER['HTTP_HOST']);", 
                 {
                   Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
-                  Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ],
-                  AllowMultisite: !If [ WordpressMultisiteEnabled, true, false ]
+                  Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ]
                 }
               ]
           Secrets:
