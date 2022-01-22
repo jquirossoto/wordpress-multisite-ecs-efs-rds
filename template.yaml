@@ -84,6 +84,33 @@ Parameters:
     MinValue: 1
     MaxValue: 365
 
+  EnableEFSAutomaticBackups:
+    Description: Specify Yes to automatically backup your file system data.
+    Type: String
+    Default: 'Yes'
+    AllowedValues: [ 'Yes', 'No' ]
+    ConstraintDescription: Must be Yes or No.
+
+  EFSPerformanceMode:
+    Description: Specify the performance mode of the file system.
+    Type: String
+    Default: 'generalPurpose'
+    AllowedValues: [ 'generalPurpose', 'maxIO' ]
+    ConstraintDescription: Must be generalPurpose or maxIO.
+
+  EFSThroughputMode:
+    Description: Specify the throughput mode for the file system. If you set it to provisioned, you must also set a value for Provisioned Throughput.
+    Type: String
+    Default: 'bursting'
+    AllowedValues: [ 'bursting', 'provisioned' ]
+    ConstraintDescription: Must be bursting or provisioned.
+
+  EFSProvisionedThroughputInMibps:
+    Description: Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
+    Type: String
+    AllowedPattern: ^$|[0-9]{1,4}
+    ConstraintDescription: Must be either empty or a number between 1 and 1024.
+
   EnableCustomDomain:
     Type: String
     Description: Specify Yes to enable a custom domain.
@@ -160,6 +187,12 @@ Rules:
       - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
         AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
 
+  VerifyEFSProvisionedThroughputMode:
+    RuleCondition: !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
+    Assertions:
+      - Assert: !Not [ !Equals [ !Ref EFSProvisionedThroughputInMibps, '' ] ]
+        AssertDescription: Provisioned throughput is mandatory if throughput mode is set to provisioned.
+
 ################################### STACK CONDITIONS ###################################
 
 Conditions:
@@ -175,6 +208,12 @@ Conditions:
 
   DatabaseReadReplicaEnabled:
     !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
+
+  EFSAutomaticBackupsEnabled:
+      !Equals [ !Ref EnableEFSAutomaticBackups, 'Yes' ]
+
+  EFSProvisionedThroughputModeEnabled:
+    !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
 
 ################################### STACK METADATA ###################################
 
@@ -198,6 +237,13 @@ Metadata:
           - EnableDatabaseMultiAZ
           - EnableDatabaseReadReplica
           - DatabaseSecretRotationSchedule
+      - Label:
+          default: File System Configuration
+        Parameters:
+          - EnableEFSAutomaticBackups
+          - EFSPerformanceMode
+          - EFSThroughputMode
+          - EFSProvisionedThroughputInMibps
       - Label:
           default: Domain Configuration
         Parameters:
@@ -238,6 +284,14 @@ Metadata:
         default: Do you want to enable a read replica?
       DatabaseSecretRotationSchedule:
         default: Database credentials rotation schedule
+      EnableEFSAutomaticBackups:
+        default: Do you want to automatically backup your file system data?
+      EFSPerformanceMode:
+        default: What performance mode should be used for the file system?
+      EFSThroughputMode:
+        default: What throughput mode should be used for the file system?
+      EFSProvisionedThroughputInMibps:
+        default: Provisioned Throughput
       EnableCustomDomain:
         default: Do you want to set a custom domain name? If enabled, you need to set the domain name and certificate ARN.
       CustomDomain:
@@ -519,16 +573,40 @@ Resources:
 
   ################################### EFS ###################################
 
-  # TODO: support choose Throughput modes. Conditional creation
+
+  EFSFileSystemEncryptionKMSKey:
+    Type: AWS::KMS::Key
+    Properties:
+      KeyPolicy:
+        Version: 2012-10-17
+        Id: !Sub '${AWS::StackName}-EFSEncry-Key'
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: kms:*
+            Resource: '*'
+
+  EFSFileSystemEncryptionKMSKeyAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: !Sub 'alias/${AWS::StackName}-EFSEncry-Key'
+      TargetKeyId: !Ref EFSFileSystemEncryptionKMSKey
+
   EFSFileSystem:
     Type: AWS::EFS::FileSystem
     Properties:
       Encrypted: true
+      KmsKeyId: !Ref EFSFileSystemEncryptionKMSKey
       FileSystemTags:
         - Key: Name
           Value: !Sub '${AWS::StackName}-EFS'
-      PerformanceMode: generalPurpose
-      ThroughputMode: bursting
+      BackupPolicy:
+        Status: !If [ EFSAutomaticBackupsEnabled, ENABLED, DISABLED ]
+      PerformanceMode: !Ref EFSPerformanceMode
+      ThroughputMode: !Ref EFSThroughputMode
+      ProvisionedThroughputInMibps: !If [ EFSProvisionedThroughputModeEnabled, !Ref EFSProvisionedThroughputInMibps , !Ref AWS::NoValue ]
 
   EFSMountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup
