@@ -175,46 +175,6 @@ Parameters:
     Description: Specify the minimum value that you plan to scale out to.
     Default: 2
 
-################################### STACK RULES ###################################
-
-Rules:
-
-  VerifyCustomDomainEnablement:
-    RuleCondition: !Equals [ !Ref EnableCustomDomain, 'Yes' ]
-    Assertions:
-      - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
-        AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
-      - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
-        AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
-
-  VerifyEFSProvisionedThroughputMode:
-    RuleCondition: !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
-    Assertions:
-      - Assert: !Not [ !Equals [ !Ref EFSProvisionedThroughputInMibps, '' ] ]
-        AssertDescription: Provisioned throughput is mandatory if throughput mode is set to provisioned.
-
-################################### STACK CONDITIONS ###################################
-
-Conditions:
-
-  CustomDomainEnabled:
-    !Equals [ !Ref EnableCustomDomain, 'Yes' ]
-
-  CustomDomainDisabled:
-    !Not [ Condition: CustomDomainEnabled ]
-
-  DatabaseMultiAZEnabled:
-    !Equals [ !Ref EnableDatabaseMultiAZ, 'Yes' ]
-
-  DatabaseReadReplicaEnabled:
-    !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
-
-  EFSAutomaticBackupsEnabled:
-      !Equals [ !Ref EnableEFSAutomaticBackups, 'Yes' ]
-
-  EFSProvisionedThroughputModeEnabled:
-    !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
-
 ################################### STACK METADATA ###################################
 
 Metadata:
@@ -312,6 +272,46 @@ Metadata:
         default: What is the minimum capacity the service should scale in to?
       ECSServiceAutoScalingTargetMaxCapacity:
         default: What is the maximum capacity the service should scale out to?
+
+################################### STACK RULES ###################################
+
+Rules:
+
+  VerifyEFSProvisionedThroughputMode:
+    RuleCondition: !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
+    Assertions:
+      - Assert: !Not [ !Equals [ !Ref EFSProvisionedThroughputInMibps, '' ] ]
+        AssertDescription: Provisioned throughput is mandatory if throughput mode is set to provisioned.
+
+  VerifyCustomDomainEnablement:
+    RuleCondition: !Equals [ !Ref EnableCustomDomain, 'Yes' ]
+    Assertions:
+      - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
+        AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
+      - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
+        AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
+
+################################### STACK CONDITIONS ###################################
+
+Conditions:
+
+  DatabaseMultiAZEnabled:
+    !Equals [ !Ref EnableDatabaseMultiAZ, 'Yes' ]
+
+  DatabaseReadReplicaEnabled:
+    !Equals [ !Ref EnableDatabaseReadReplica, 'Yes' ]
+
+  EFSAutomaticBackupsEnabled:
+      !Equals [ !Ref EnableEFSAutomaticBackups, 'Yes' ]
+
+  EFSProvisionedThroughputModeEnabled:
+    !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
+
+  CustomDomainEnabled:
+    !Equals [ !Ref EnableCustomDomain, 'Yes' ]
+
+  CustomDomainDisabled:
+    !Not [ Condition: CustomDomainEnabled ]
 
 ################################### STACK MAPPINGS ###################################
 
@@ -425,6 +425,7 @@ Resources:
 
   Database:
     Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
     Properties:
       DBInstanceIdentifier: !Sub '${AWS::StackName}-wordpress'
       DBInstanceClass: !Ref DatabaseInstanceClass
