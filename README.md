@@ -274,7 +274,21 @@ To deploy the solution using AWS CLI, follow these steps:
 
 3. Deploy the stack
     ```
-    aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <NAME YOUR STACK>
+    aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <STACK-NAME>
+    ```
+
+## Custom domain
+
+In case you chose to set a custom domain, you are gonna need to create a CNAME record in the DNS configurations of your domain. The value of the record is the LoadBalancer domain provided to you in the stack outputs.
+
+## WordPress multisite
+
+In case you want to configure WordPress as a multisite, you will have to activate it by accessing the Admin -> Configurations -> Network Setup. Follow the detailed instructions there. To access and modify the files indicated there, you have two options:
+
+1. Mount the EFS File System on an EC2 instance to access and modify files. For his option, you can follow this [tutorial](https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html).
+2. Establish a connection to one of the tasks that is running in the ECS service. For this option, you can run the following command: 
+    ```
+    aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
     ```
 
 ## How to run the solution locally
