@@ -273,6 +273,7 @@ To deploy the solution using AWS CLI, follow these steps:
     :warning: Optional parameters can be left empty.
 
 3. Deploy the stack
+
     ```
     aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <STACK-NAME>
     ```
@@ -286,7 +287,8 @@ In case you chose to set a custom domain, you are gonna need to create a CNAME r
 In case you want to configure WordPress as a multisite, you will have to activate it by accessing the Admin -> Configurations -> Network Setup. Follow the detailed instructions there. To access and modify the files indicated there, you have two options:
 
 1. Mount the EFS File System on an EC2 instance to access and modify files. For his option, you can follow this [tutorial](https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html).
-2. Establish a connection to one of the tasks that is running in the ECS service. For this option, you can run the following command: 
+2. Establish a connection to one of the tasks that is running in the ECS service. For this option, you can run the following command:
+
     ```
     aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
     ```
@@ -301,10 +303,12 @@ To run the solution locally, execute the following procedure:
 
 1. Clone this repo
 2. Start the database container
+
     ```
     docker-compose -f ./docker-compose.yml up -d
     ```
 3. Run the WordPress container
+
     ```
     docker run -it -p 80:80 -v $(pwd)/docker/wordpress:/var/www/html --rm --name='wordpress' --network=wordpress-multisite-ecs-efs-rds_wordpress-network --env-file ./wordpress.env wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
     ```
