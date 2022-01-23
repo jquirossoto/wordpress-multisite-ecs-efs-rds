@@ -292,23 +292,3 @@ In case you want to configure WordPress as a multisite, you will have to activat
     ```
     aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
     ```
-
-## How to run the solution locally
-
-### Things you will need
-
-1. [Docker](https://docs.docker.com/get-docker/)
-
-To run the solution locally, execute the following procedure:
-
-1. Clone this repo
-2. Start the database container
-
-    ```
-    docker-compose -f ./docker-compose.yml up -d
-    ```
-3. Run the WordPress container
-
-    ```
-    docker run -it -p 80:80 -v $(pwd)/docker/wordpress:/var/www/html --rm --name='wordpress' --network=wordpress-multisite-ecs-efs-rds_wordpress-network --env-file ./wordpress.env wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
-    ```
