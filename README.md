@@ -287,7 +287,7 @@ In case you chose to set a custom domain, you are gonna need to create a CNAME r
 In case you want to configure WordPress as a multisite, you will have to activate it by accessing the Admin -> Configurations -> Network Setup. Follow the detailed instructions there. To access and modify the files indicated there, you have two options:
 
 1. Mount the EFS File System on an EC2 instance to access and modify files. For this option, you can follow this [tutorial](https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html).
-2. Establish a connection to one of the tasks that is running in the ECS service. For this option, you can run the following command:
+2. Establish a connection to one of the tasks running in the ECS service. For this option, you can run the following command:
 
     ```
     aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
