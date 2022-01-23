@@ -822,7 +822,7 @@ Resources:
   ECSServiceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupName: !Sub ${AWS::StackName}-ECS-Service-SG
+      GroupName: !Sub ${AWS::StackName}-ECSService-SG
       GroupDescription: !Sub ${AWS::StackName} ECS Service Security Group.
       SecurityGroupIngress:
         - Description : Allow traffic from LoadBalancerSecurityGroup on port 80.
