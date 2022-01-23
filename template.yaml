@@ -6,7 +6,7 @@ Description: >
   Service (RDS) to store the data. Requirements: VPC with an internet gateway, two sets of one private subnet 
   and one public subnet that belong to different availability zones. Each public subnet must have a NAT gateway 
   attached and the private subnet in the respective availability zone must route internet traffic through that 
-  NAT gateway.
+  NAT gateway. For more information, visit https://github.com/jquirossoto/wordpress-multisite-ecs-efs-rds
 
 ################################### STACK PARAMETERS ###################################
 
