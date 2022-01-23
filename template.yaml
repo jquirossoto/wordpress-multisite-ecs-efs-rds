@@ -767,7 +767,7 @@ Resources:
     Properties:
       ContainerDefinitions:
         - Name: !FindInMap [ NameConfig, Container, Name ]
-          Image: wordpress@sha256:8374f670cef98736f47b21b52dbeabbb356d15ab31978b77f638df7e21cd371a
+          Image: wordpress@sha256:7c33c72f1aba217fd5554d5dbc7dbad3274962c5602da353a6196db1241cd05a
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
               Value: !Sub [
