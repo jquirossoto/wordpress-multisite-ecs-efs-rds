@@ -840,8 +840,7 @@ Resources:
     Properties:
       ServiceName: !Sub ${AWS::StackName}-ECSService
       Cluster: !Ref ECSCluster
-      # Capacity will be handle exclusively by the ECSServiceAutoScalingTarget
-      DesiredCount: 0
+      DesiredCount: !Ref ECSServiceAutoScalingTargetMinCapacity
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: FARGATE
       EnableExecuteCommand: true
