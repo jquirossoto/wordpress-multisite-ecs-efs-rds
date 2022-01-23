@@ -215,14 +215,11 @@ Metadata:
           - CustomDomain
           - CustomDomainCertificateARN
       - Label:
-          default: Container Configuration
+          default: ECS Configuration
         Parameters:
           - ECSTaskvCPU
           - ECSTaskMemory
           - ECSLogRetentionPeriod
-      - Label:
-          default: Auto Scaling Configuration
-        Parameters:
           - ECSServiceAutoScalingMetric
           - ECSServiceAutoScalingTargetValue
           - ECSServiceAutoScalingTargetMinCapacity
@@ -273,9 +270,9 @@ Metadata:
       ECSServiceAutoScalingTargetValue:
         default: What value should the metric use to auto scale?
       ECSServiceAutoScalingTargetMinCapacity:
-        default: What is the minimum capacity the service should scale in to?
+        default: What is the minimum capacity it should scale in to?
       ECSServiceAutoScalingTargetMaxCapacity:
-        default: What is the maximum capacity the service should scale out to?
+        default: What is the maximum capacity it should scale out to?
 
 ################################### STACK RULES ###################################
 
