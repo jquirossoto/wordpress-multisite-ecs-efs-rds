@@ -280,7 +280,7 @@ To deploy the solution using AWS CLI, follow these steps:
 
 ## Custom domain
 
-In case you chose to set a custom domain, you are gonna need to create a CNAME record in the DNS configurations of your domain. The value of the record is the LoadBalancerDNSName provided in the stack outputs.
+In case you chose to set a custom domain, you will need to create a CNAME record in the DNS configurations of your domain. The value of the record is the LoadBalancerDNSName provided in the stack outputs.
 
 ## WordPress multisite
 
