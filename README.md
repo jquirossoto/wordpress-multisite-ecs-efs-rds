@@ -6,9 +6,8 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 ![wordpress-multisite-ecs-efs-rds](https://user-images.githubusercontent.com/4935587/150462554-d7126f41-4155-4fa2-8041-f5c26297e26a.png)
 
-## How to deploy the solution
 
-### Network requirements
+## Network requirements
 
 1. VPC with an attached Internet gateway.
 2. Two sets of one public subnet and one private subnet. Each set must belong to different availability zones.
@@ -235,6 +234,23 @@ Solution that deploys WordPress containers in AWS Elastic Container Service (ECS
 
 </details>
 
+## Custom domain
+
+In case you chose to set a custom domain, you will need to create a CNAME record in the DNS configurations of your domain. The value of the record is the LoadBalancerDNSName provided in the stack outputs.
+
+## WordPress multisite
+
+In case you want to configure WordPress as multisite, you will have to activate it by accessing the Network installation wizard: WordPress Dashboard -> Tools -> Network Setup. Follow the detailed instructions there. To access and modify the files indicated there, you have two options:
+
+1. Mount the EFS File System on an EC2 instance to access and modify files. For this option, you can follow this [tutorial](https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html).
+2. Establish a connection to one of the tasks running in the ECS service. For this option, you can run the following command:
+
+    ```
+    aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
+    ```
+
+## How to deploy the solution
+
 ### AWS Console
 
 To deploy the solution using AWS Console, follow to this [tutorial](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/cfn-console-create-stack.html).
@@ -242,6 +258,7 @@ To deploy the solution using AWS Console, follow to this [tutorial](https://docs
 ### AWS CLI
 
 To deploy the solution using AWS CLI, follow these steps:
+
 1. Clone this repo
 2. Create a file called stack.env. Below you can find a sample of the contents of this file.
     ```
@@ -254,12 +271,11 @@ To deploy the solution using AWS CLI, follow these steps:
     DatabaseBackupRetentionPeriod=5
     EnableDatabaseMultiAZ=Yes
     EnableDatabaseReadReplica=Yes
-    DatabaseSecretRotationSchedule=30
+    DatabaseCredentialsRotationSchedule=30
     EnableEFSAutomaticBackups=Yes
     EFSPerformanceMode=generalPurpose
     EFSThroughputMode=bursting
     EFSProvisionedThroughputInMibps=
-    EnableCustomDomain=Yes
     CustomDomain=wp.example.com
     CustomDomainCertificateARN=arn:aws:acm:us-east-1:111111111111:certificate/0c2189d1-b4ab-4dce-aebb-2a90b0332acd
     ECSTaskvCPU=.5
@@ -276,19 +292,4 @@ To deploy the solution using AWS CLI, follow these steps:
 
     ```
     aws cloudformation deploy --template-file ./template.yaml --capabilities CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND --parameter-overrides $(cat stack.env) --stack-name <STACK-NAME>
-    ```
-
-## Custom domain
-
-In case you chose to set a custom domain, you will need to create a CNAME record in the DNS configurations of your domain. The value of the record is the LoadBalancerDNSName provided in the stack outputs.
-
-## WordPress multisite
-
-In case you want to configure WordPress as multisite, you will have to activate it by accessing the Network installation wizard: WordPress Dashboard -> Tools -> Network Setup. Follow the detailed instructions there. To access and modify the files indicated there, you have two options:
-
-1. Mount the EFS File System on an EC2 instance to access and modify files. For this option, you can follow this [tutorial](https://docs.aws.amazon.com/efs/latest/ug/wt1-test.html).
-2. Establish a connection to one of the tasks running in the ECS service. For this option, you can run the following command:
-
-    ```
-    aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
     ```

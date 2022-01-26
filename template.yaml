@@ -95,7 +95,7 @@ Parameters:
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
-  DatabaseSecretRotationSchedule:
+  DatabaseCredentialsRotationSchedule:
     Type: Number
     Description: >
       Required.
@@ -235,7 +235,7 @@ Metadata:
           - DatabaseBackupRetentionPeriod
           - EnableDatabaseMultiAZ
           - EnableDatabaseReadReplica
-          - DatabaseSecretRotationSchedule
+          - DatabaseCredentialsRotationSchedule
       - Label:
           default: File System Configuration
         Parameters:
@@ -277,7 +277,7 @@ Metadata:
         default: Should the database be deployed in multiple availability zones?
       EnableDatabaseReadReplica:
         default: Do you want to enable a read replica?
-      DatabaseSecretRotationSchedule:
+      DatabaseCredentialsRotationSchedule:
         default: How often should database credentials be rotated?
       EnableEFSAutomaticBackups:
         default: Do you want to automatically backup your file system data?
@@ -381,7 +381,7 @@ Resources:
 
   ################################### DATABASE ###################################
 
-  DatabaseHostedSecretRotationLambdaSecurityGroup:
+  DatabaseHostedCredentialsRotationLambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupName: !Sub ${AWS::StackName}-DBSecretRot-L-SG
@@ -403,11 +403,11 @@ Resources:
       GroupName: !Sub ${AWS::StackName}-Database-SG
       GroupDescription: !Sub ${AWS::StackName} Database Security Group.
       SecurityGroupIngress:
-        - Description : Allow traffic from DatabaseHostedSecretRotationLambdaSecurityGroup on port 3306.
+        - Description : Allow traffic from DatabaseHostedCredentialsRotationLambdaSecurityGroup on port 3306.
           IpProtocol: tcp
           FromPort: 3306
           ToPort: 3306
-          SourceSecurityGroupId: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
+          SourceSecurityGroupId: !Ref DatabaseHostedCredentialsRotationLambdaSecurityGroup
         - Description : Allow traffic from ECSServiceSecurityGroup on port 3306.
           IpProtocol: tcp
           FromPort: 3306
@@ -425,7 +425,7 @@ Resources:
       DBSubnetGroupDescription: !Sub ${AWS::StackName} Database Subnet Group.
       SubnetIds: !Ref PrivateSubnetIds
 
-  DatabaseSecretKMSKey:
+  DatabaseCredentialsKMSKey:
     Type: AWS::KMS::Key
     Properties:
       KeyPolicy:
@@ -439,18 +439,18 @@ Resources:
             Action: kms:*
             Resource: '*'
 
-  DatabaseSecretKMSKeyAlias:
+  DatabaseCredentialsKMSKeyAlias:
     Type: AWS::KMS::Alias
     Properties:
       AliasName: !Sub alias/${AWS::StackName}-DBCreds-Key
-      TargetKeyId: !Ref DatabaseSecretKMSKey
+      TargetKeyId: !Ref DatabaseCredentialsKMSKey
 
-  DatabaseSecret:
+  DatabaseCredentials:
     Type: AWS::SecretsManager::Secret
     Properties:
       Description: !Sub ${AWS::StackName} Database credentials secret.
       Name: !Sub 'rds-db-credentials/${AWS::StackName}'
-      KmsKeyId: !Ref DatabaseSecretKMSKey
+      KmsKeyId: !Ref DatabaseCredentialsKMSKey
       GenerateSecretString:
         SecretStringTemplate: '{"username": "wordpress"}'
         GenerateStringKey: password
@@ -484,8 +484,8 @@ Resources:
       DBInstanceClass: !Ref DatabaseInstanceClass
       DBName: wordpress
       Engine: mysql
-      MasterUsername: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:username}}'
-      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseSecret}:SecretString:password}}'
+      MasterUsername: !Sub '{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:username}}'
+      MasterUserPassword: !Sub '{{resolve:secretsmanager:${DatabaseCredentials}:SecretString:password}}'
       MultiAZ: !If [ DatabaseMultiAZEnabled, true, false ]
       PubliclyAccessible: false
       AllocatedStorage: !Ref DatabaseAllocatedStorage
@@ -506,27 +506,27 @@ Resources:
       DBInstanceClass: !Ref DatabaseInstanceClass
       StorageType: gp2
 
-  DatabaseSecretAttachment:
+  DatabaseCredentialsAttachment:
     Type: AWS::SecretsManager::SecretTargetAttachment
     Properties:
-      SecretId: !Ref DatabaseSecret
+      SecretId: !Ref DatabaseCredentials
       TargetId: !Ref Database
       TargetType: AWS::RDS::DBInstance
 
-  DatabaseSecretRotation:
+  DatabaseCredentialsRotation:
     Type: AWS::SecretsManager::RotationSchedule
     DependsOn:
-      - DatabaseSecretAttachment
+      - DatabaseCredentialsAttachment
     Properties:
-      SecretId: !Ref DatabaseSecret
+      SecretId: !Ref DatabaseCredentials
       HostedRotationLambda:
-        KmsKeyArn: !GetAtt DatabaseSecretKMSKey.Arn
+        KmsKeyArn: !GetAtt DatabaseCredentialsKMSKey.Arn
         RotationType: MySQLSingleUser
-        RotationLambdaName: !Sub ${AWS::StackName}-SecretsManagerRotation
-        VpcSecurityGroupIds: !Ref DatabaseHostedSecretRotationLambdaSecurityGroup
+        RotationLambdaName: !Sub ${AWS::StackName}-CredentialsRotationManager
+        VpcSecurityGroupIds: !Ref DatabaseHostedCredentialsRotationLambdaSecurityGroup
         VpcSubnetIds: !Join [ ',', !Ref PrivateSubnetIds ]
       RotationRules:
-        AutomaticallyAfterDays: !Ref DatabaseSecretRotationSchedule
+        AutomaticallyAfterDays: !Ref DatabaseCredentialsRotationSchedule
 
   ################################### LOAD BALANCER ###################################
 
@@ -751,8 +751,8 @@ Resources:
               - secretsmanager:GetSecretValue
               - kms:Decrypt
             Resource:
-              - !Ref DatabaseSecret
-              - !GetAtt DatabaseSecretKMSKey.Arn
+              - !Ref DatabaseCredentials
+              - !GetAtt DatabaseCredentialsKMSKey.Arn
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -809,13 +809,13 @@ Resources:
               ]
           Secrets:
             - Name: WORDPRESS_DB_HOST
-              ValueFrom: !Sub '${DatabaseSecret}:host::'
+              ValueFrom: !Sub '${DatabaseCredentials}:host::'
             - Name: WORDPRESS_DB_NAME
-              ValueFrom: !Sub '${DatabaseSecret}:dbname::'
+              ValueFrom: !Sub '${DatabaseCredentials}:dbname::'
             - Name: WORDPRESS_DB_USER
-              ValueFrom: !Sub '${DatabaseSecret}:username::'
+              ValueFrom: !Sub '${DatabaseCredentials}:username::'
             - Name: WORDPRESS_DB_PASSWORD
-              ValueFrom: !Sub '${DatabaseSecret}:password::'
+              ValueFrom: !Sub '${DatabaseCredentials}:password::'
           LinuxParameters:
             InitProcessEnabled: true
           LogConfiguration:
