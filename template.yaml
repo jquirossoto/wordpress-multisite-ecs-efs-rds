@@ -206,13 +206,13 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the maximum value that you plan to scale in to.
+      Specify the minimum value to scale in to.
 
   ECSServiceAutoScalingTargetMaxCapacity:
     Type: Number
     Description: >
       Required.
-      Specify the minimum value that you plan to scale out to.
+      Specify the maximum value to scale out to.
 
 ################################### STACK METADATA ###################################
 
@@ -288,7 +288,7 @@ Metadata:
       EFSProvisionedThroughputInMibps:
         default: Provisioned Throughput
       CustomDomain:
-        default: Do you want to set a custom domain name?
+        default: Do you want to set a custom domain?
       CustomDomainCertificateARN:
         default: Certificate ARN
       ECSTaskvCPU:
