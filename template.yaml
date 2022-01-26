@@ -136,7 +136,7 @@ Parameters:
     Type: String
     Description: >
       Conditional: required if throughput mode is set to provisioned.
-      Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
+      Specify the throughput, measured in MiB/s, to be provisioned for the file system. Value must be between 1 and 1024.
     AllowedPattern: ^$|[0-9]{1,4}
     ConstraintDescription: Must be either empty or a number between 1 and 1024.
 
@@ -169,7 +169,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the amount (in MiB) of memory to be used by the task. The value you choose is determined by the cpu parameter. For more 
+      Specify the amount (in MiB) of memory to be used by the task. This value is determined by the cpu parameter. For more 
       information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
     AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 
       14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 
@@ -280,7 +280,7 @@ Metadata:
       DatabaseCredentialsRotationSchedule:
         default: How often should database credentials be rotated?
       EnableEFSAutomaticBackups:
-        default: Do you want to automatically backup your file system data?
+        default: Do you want to automatically backup the file system data?
       EFSPerformanceMode:
         default: What performance mode should be used for the file system?
       EFSThroughputMode:
@@ -320,7 +320,7 @@ Rules:
     RuleCondition: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
     Assertions:
       - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
-        AssertDescription: Certificate ARN is mandatory if you want to custom domain is set.
+        AssertDescription: Certificate ARN is mandatory if custom domain is set.
 
 ################################### STACK CONDITIONS ###################################
 
