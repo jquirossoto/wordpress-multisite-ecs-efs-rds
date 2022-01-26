@@ -62,7 +62,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the upper limit to which Amazon RDS can automatically scale the storage of the database instance. Value must be between 20 and 65536.
+      Specify the upper limit (Gb) to which Amazon RDS can automatically scale the storage of the database instance. Value must be between 20 and 65536.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 20 and 65536.
