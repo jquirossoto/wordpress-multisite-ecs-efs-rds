@@ -504,6 +504,7 @@ Resources:
     Properties:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
+      DBInstanceIdentifier: !Sub ${AWS::StackName}-wordpress-readreplica
       StorageType: gp2
 
   DatabaseCredentialsAttachment:
@@ -933,4 +934,4 @@ Outputs:
     Value: !GetAtt Database.Endpoint.Address
   DatabaseReadReplicaEndpointAddress:
     Description: Connection endpoint for the read replica database.
-    Value: !If [ DatabaseReadReplicaEnabled, !GetAtt DatabaseReadReplica.Endpoint.Address, !Ref AWS::NoValue ]
+    Value: !If [ DatabaseReadReplicaEnabled, !GetAtt DatabaseReadReplica.Endpoint.Address, '' ]
