@@ -14,19 +14,27 @@ Parameters:
 
   VPCId:
     Type: AWS::EC2::VPC::Id
-    Description: Specify the VPC Id to this deploy to.
+    Description: >
+      Required.
+      Specify the VPC Id to deploy this to.
 
   PrivateSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of private subnet Ids. Each private subnet must have been configured in different availability zones. Please, select only two subnets.
+    Description: >
+      Required.
+      Specify a list of private subnet Ids. Each private subnet must have been configured in different availability zones. Please, select only two subnets.
 
   PublicSubnetIds:
     Type: List<AWS::EC2::Subnet::Id>
-    Description: Specify a list of public subnet Ids. Each public subnet must have been configured in different availability zones. Please, select only two subnets.
+    Description: >
+      Required.
+      Specify a list of public subnet Ids. Each public subnet must have been configured in different availability zones. Please, select only two subnets.
 
   DatabaseInstanceClass:
     Type: String
-    Description: Specify the database instance type.
+    Description: >
+      Required.
+      Specify the database instance type.
     AllowedValues: [ db.t2.micro, db.t2.small, db.t2.medium, db.t2.large, db.t2.xlarge, db.t2.2xlarge, 
       db.t3.micro, db.t3.small, db.t3.medium, db.t3.large, db.t3.xlarge, db.t3.2xlarge, db.t4g.micro, 
       db.t4g.small, db.t4g.medium, db.t4g.large, db.t4g.xlarge, db.t4g.2xlarge, db.r3.large, db.r3.xlarge, 
@@ -43,43 +51,55 @@ Parameters:
 
   DatabaseAllocatedStorage:
     Type: Number
-    Description: Specify the size of the database (Gb).
+    Description: >
+      Required.
+      Specify the size of the database (Gb).
     MinValue: 20
     MaxValue: 65536
-    ConstraintDescription: Must be between 5 and 65536Gb.
+    ConstraintDescription: Must be between 20 and 65536.
 
   DatabaseMaxAllocatedStorage:
     Type: Number
-    Description: Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the database instance.
+    Description: >
+      Required.
+      Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the database instance.
     MinValue: 20
     MaxValue: 65536
-    ConstraintDescription: Must be between 5 and 65536Gb.
+    ConstraintDescription: Must be between 20 and 65536.
 
   DatabaseBackupRetentionPeriod:
     Type: Number
-    Description: Specify the number of days for which automated backups are retained. Setting this parameter to 0 disables automated backups.
+    Description: >
+      Required.
+      Specify the number of days for which automated backups are retained.
     Default: 1
-    MinValue: 0
+    MinValue: 1
     MaxValue: 35
-    ConstraintDescription: Must be between 0 and 35 days.
+    ConstraintDescription: Must be between 1 and 35 days.
 
   EnableDatabaseMultiAZ:
     Type: String
-    Description: Specify Yes to enable multi availability zone deployment.
+    Description: >
+      Required.
+      Specify Yes to enable multi availability zone deployment.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   EnableDatabaseReadReplica:
     Type: String
-    Description: Specify Yes to enable a database read replica.
+    Description: >
+      Required.
+      Specify Yes to enable a database read replica.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   DatabaseSecretRotationSchedule:
     Type: Number
-    Description: Specify the number of days between automatic scheduled rotations of the database credentials.
+    Description: >
+      Required.
+      Specify the number of days between automatic scheduled rotations of the database credentials.
     Default: 30
     MinValue: 1
     MaxValue: 365
@@ -87,53 +107,59 @@ Parameters:
 
   EnableEFSAutomaticBackups:
     Type: String
-    Description: Specify Yes to automatically backup the file system data.
+    Description: >
+      Required.
+      Specify Yes to automatically backup the file system data.
     Default: 'Yes'
     AllowedValues: [ 'Yes', 'No' ]
     ConstraintDescription: Must be Yes or No.
 
   EFSPerformanceMode:
     Type: String
-    Description: Specify the performance mode of the file system.
+    Description: >
+      Required.
+      Specify the performance mode of the file system.
     Default: 'generalPurpose'
     AllowedValues: [ 'generalPurpose', 'maxIO' ]
     ConstraintDescription: Must be generalPurpose or maxIO.
 
   EFSThroughputMode:
     Type: String
-    Description: Specify the throughput mode of the file system. If you set it to provisioned, you must also set a Provisioned Throughput value.
+    Description: >
+      Required. 
+      Specify the throughput mode of the file system.
     Default: 'bursting'
     AllowedValues: [ 'bursting', 'provisioned' ]
     ConstraintDescription: Must be bursting or provisioned.
 
   EFSProvisionedThroughputInMibps:
     Type: String
-    Description: Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
+    Description: >
+      Conditional: required if throughput mode is set to provisioned.
+      Specify the throughput, measured in MiB/s, that you want to provision for the file system. Value must be between 1 and 1024.
     AllowedPattern: ^$|[0-9]{1,4}
     ConstraintDescription: Must be either empty or a number between 1 and 1024.
 
-  EnableCustomDomain:
-    Type: String
-    Description: Specify Yes to enable a custom domain.
-    Default: 'No'
-    AllowedValues: [ 'Yes', 'No' ]
-    ConstraintDescription: Must be Yes or No.
-
   CustomDomain:
     Type: String
-    Description: Specify a domain name.
+    Description: >
+      Optional.
+      Specify a custom domain.
     AllowedPattern: ^$|(?!-)[a-zA-Z0-9-.]{1,63}(?<!-)
     ConstraintDescription: Incorrect format.
 
   CustomDomainCertificateARN:
     Type: String
-    Description: Specify the ARN of the ACM certificate for the custom domain.
+    Description: >
+      Conditional: required if custom domain is set.
+      Specify the ARN of the ACM certificate for the custom domain.
     AllowedPattern: ^$|arn:aws:acm:.*
-    ConstraintDescription: Incorrect format.
+    ConstraintDescription: Must be either empty or an ACM certificate ARN.
 
   ECSTaskvCPU:
     Type: String
-    Description: > 
+    Description: >
+      Required.
       Specify the amount of vCPU to be used by the task. For more information, 
       https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-cpu
     AllowedValues: [ '.25', '.5', '1', '2', '4' ]
@@ -141,43 +167,52 @@ Parameters:
 
   ECSTaskMemory:
     Type: Number
-    Description: > 
+    Description: >
+      Required.
       Specify the amount (in MiB) of memory to be used by the task. The value you choose is determined by the cpu parameter. For more 
       information, https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-resource-ecs-taskdefinition.html#cfn-ecs-taskdefinition-memory
     AllowedValues: [ 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 
       14336, 15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 
       29696, 30720 ]
     ConstraintDescription: >
-      Must be 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 15360, 16384, 17408, 
-      18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 29696 or 30720.
+      Must be 256, 512, 1024, 2048, 3072, 4096, 5120, 6144, 7168, 8192, 9216, 10240, 11264, 12288, 13312, 14336, 
+      15360, 16384, 17408, 18432, 19456, 20480, 21504, 22528, 23552, 24576, 25600, 26624, 27648, 28672, 29696 or 30720.
 
   ECSLogRetentionPeriod:
     Type: Number
-    Description: Specify the number of days to retain the log events.
+    Description: >
+      Required.
+      Specify the number of days to retain the log events.
     Default: 90
     AllowedValues: [ 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653 ]
     ConstraintDescription: Must be 1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827 or 3653.
 
   ECSServiceAutoScalingMetric:
     Type: String
-    Description: Specify the auto scaling metric.
-    AllowedValues: [ AverageCPUUtilization, AverageMemoryUtilization, RequestCountPerTarget ]
-    Default: AverageCPUUtilization
+    Description: >
+      Required.
+      Specify the auto scaling metric.
+    AllowedValues: [ 'AverageCPUUtilization', 'AverageMemoryUtilization', 'RequestCountPerTarget' ]
     ConstraintDescription: Must be AverageCPUUtilization, AverageMemoryUtilization or RequestCountPerTarget.
 
   ECSServiceAutoScalingTargetValue:
     Type: Number
     Description: >
-      Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU utilization, 
-      then the target value is a percent value that represents how much of the CPU can be used before scaling out.
+      Required.
+      Specify the target value for the auto scaling metric. The value must be a valid number based on the choice of metric. For example, if the metric is CPU 
+      utilization, then the target value is a percent value that represents how much of the CPU can be used before scaling out.
 
   ECSServiceAutoScalingTargetMinCapacity:
     Type: Number
-    Description: Specify the maximum value that you plan to scale in to.
+    Description: >
+      Required.
+      Specify the maximum value that you plan to scale in to.
 
   ECSServiceAutoScalingTargetMaxCapacity:
     Type: Number
-    Description: Specify the minimum value that you plan to scale out to.
+    Description: >
+      Required.
+      Specify the minimum value that you plan to scale out to.
 
 ################################### STACK METADATA ###################################
 
@@ -211,7 +246,6 @@ Metadata:
       - Label:
           default: Domain Configuration
         Parameters:
-          - EnableCustomDomain
           - CustomDomain
           - CustomDomainCertificateARN
       - Label:
@@ -253,10 +287,8 @@ Metadata:
         default: What throughput mode should be used for the file system?
       EFSProvisionedThroughputInMibps:
         default: Provisioned Throughput
-      EnableCustomDomain:
-        default: Do you want to set a custom domain name? If so, you need to set the domain name and certificate ARN.
       CustomDomain:
-        default: Domain name
+        default: Do you want to set a custom domain name?
       CustomDomainCertificateARN:
         default: Certificate ARN
       ECSTaskvCPU:
@@ -285,12 +317,10 @@ Rules:
         AssertDescription: Provisioned throughput is mandatory if throughput mode is set to provisioned.
 
   VerifyCustomDomainEnablement:
-    RuleCondition: !Equals [ !Ref EnableCustomDomain, 'Yes' ]
+    RuleCondition: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
     Assertions:
-      - Assert: !Not [ !Equals [ !Ref CustomDomain, '' ] ]
-        AssertDescription: Domain name is mandatory if custom domain enablement is set to Yes.
       - Assert: !Not [ !Equals [ !Ref CustomDomainCertificateARN, '' ] ]
-        AssertDescription: Certificate ARN is mandatory if custom domain enablement is set to Yes.
+        AssertDescription: Certificate ARN is mandatory if you want to custom domain is set.
 
 ################################### STACK CONDITIONS ###################################
 
@@ -309,7 +339,7 @@ Conditions:
     !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
 
   CustomDomainEnabled:
-    !Equals [ !Ref EnableCustomDomain, 'Yes' ]
+    !Not [ !Equals [ !Ref CustomDomain, '' ] ]
 
   CustomDomainDisabled:
     !Not [ Condition: CustomDomainEnabled ]
@@ -332,7 +362,7 @@ Mappings:
       Units: 512
     '1':
       Units: 1024
-    '2': 
+    '2':
       Units: 2048
     '4':
       Units: 4096
@@ -405,7 +435,7 @@ Resources:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
             Action: kms:*
             Resource: '*'
 
@@ -437,7 +467,7 @@ Resources:
           - Sid: Enable IAM User Permissions
             Effect: Allow
             Principal:
-              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+              AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
             Action: kms:*
             Resource: '*'
 
