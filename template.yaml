@@ -53,7 +53,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the size of the database (Gb).
+      Specify the size of the database (Gb). Value must be between 20 and 65536.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 20 and 65536.
@@ -62,7 +62,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the upper limit in gibibytes (GiB) to which Amazon RDS can automatically scale the storage of the database instance.
+      Specify the upper limit to which Amazon RDS can automatically scale the storage of the database instance. Value must be between 20 and 65536.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 20 and 65536.
@@ -71,7 +71,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the number of days for which automated backups are retained.
+      Specify the number of days for which automated backups are retained. Value must be between 1 and 35.
     Default: 1
     MinValue: 1
     MaxValue: 35
@@ -99,7 +99,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the number of days between automatic scheduled rotations of the database credentials.
+      Specify the number of days between automatic scheduled rotations of the database credentials. Value must be between 1 and 365.
     Default: 30
     MinValue: 1
     MaxValue: 365
@@ -928,3 +928,9 @@ Outputs:
   LoadBalancerDNSName:
     Description: Domain of the load balancer.
     Value: !Sub http://${LoadBalancer.DNSName}
+  DatabaseEndpointAddress:
+    Description: Connection endpoint for the database.
+    Value: !GetAtt Database.Endpoint.Address
+  DatabaseReadReplicaEndpointAddress:
+    Description: Connection endpoint for the read replica database.
+    Value: !If [ DatabaseReadReplicaEnabled, !GetAtt DatabaseReadReplica.Endpoint.Address, !Ref AWS::NoValue ]
