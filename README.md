@@ -249,6 +249,10 @@ In case you want to configure WordPress as multisite, you will have to activate 
     aws ecs execute-command --region <REGION> --cluster <YOUR-CLUSTER-NAME> --container wordpress --command \"/bin/bash\" --interactive --task <TASK-ID>
     ```
 
+## Read replica
+
+This Stack allows to create a reading replica in RDS. In order for WordPress to be aware of and use this read replica, [HyperDB](https://wordpress.org/plugins/hyperdb/) must be installed and configured.
+
 ## How to deploy the solution
 
 ### AWS Console
