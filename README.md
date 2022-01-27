@@ -284,7 +284,7 @@ To deploy the solution using AWS CLI, follow these steps:
     CustomDomainCertificateARN=arn:aws:acm:us-east-1:111111111111:certificate/0c2189d1-b4ab-4dce-aebb-2a90b0332acd
     ECSTaskvCPU=.5
     ECSTaskMemory=3072
-    ECSLogRetentionPeriod=1
+    ECSLogRetentionPeriod=90
     ECSServiceAutoScalingMetric=AverageCPUUtilization
     ECSServiceAutoScalingTargetValue=80
     ECSServiceAutoScalingTargetMinCapacity=1
