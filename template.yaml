@@ -53,7 +53,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the size of the database (Gb). Value must be between 20 and 65536.
+      Specify the size of the database (GiB). Value must be between 20 and 65536.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 20 and 65536.
@@ -62,7 +62,7 @@ Parameters:
     Type: Number
     Description: >
       Required.
-      Specify the upper limit (Gb) to which Amazon RDS can automatically scale the storage of the database instance. Value must be between 20 and 65536.
+      Specify the upper limit (GiB) to which Amazon RDS can automatically scale the storage of the database instance. Value must be between 20 and 65536.
     MinValue: 20
     MaxValue: 65536
     ConstraintDescription: Must be between 20 and 65536.
@@ -341,9 +341,6 @@ Conditions:
   CustomDomainEnabled:
     !Not [ !Equals [ !Ref CustomDomain, '' ] ]
 
-  CustomDomainDisabled:
-    !Not [ Condition: CustomDomainEnabled ]
-
   ECSServiceAutoScalingMetricRequestCountPerTargetEnabled:
     !Equals [ !Ref ECSServiceAutoScalingMetric, 'RequestCountPerTarget' ]
 
@@ -587,23 +584,14 @@ Resources:
 
   LoadBalancerHTTPListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
-    Condition: CustomDomainDisabled
-    Properties:
-      LoadBalancerArn: !Ref LoadBalancer
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref LoadBalancerTargetGroup
-
-  LoadBalancerHTTPListenerCustomDomain:
-    Type: AWS::ElasticLoadBalancingV2::Listener
     Condition: CustomDomainEnabled
     Properties:
       LoadBalancerArn: !Ref LoadBalancer
       Port: 80
       Protocol: HTTP
       DefaultActions:
+        - !If 
+          - CustomDomainEnabled
         - Type: redirect
           RedirectConfig: 
             Protocol: HTTPS
@@ -612,8 +600,10 @@ Resources:
             Path: '/#{path}'
             Query: '#{query}'
             StatusCode: HTTP_301
+          - Type: forward
+            TargetGroupArn: !Ref LoadBalancerTargetGroup
   
-  LoadBalancerHTTPSListenerCustomDomain:
+  LoadBalancerHTTPSListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Condition: CustomDomainEnabled
     Properties:
