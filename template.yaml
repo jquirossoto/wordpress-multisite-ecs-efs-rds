@@ -132,7 +132,7 @@ Parameters:
     AllowedValues: [ 'bursting', 'provisioned' ]
     ConstraintDescription: Must be bursting or provisioned.
 
-  EFSProvisionedThroughputInMibps:
+  EFSProvisionedThroughput:
     Type: String
     Description: >
       Conditional: required if throughput mode is set to provisioned.
@@ -242,7 +242,7 @@ Metadata:
           - EnableEFSAutomaticBackups
           - EFSPerformanceMode
           - EFSThroughputMode
-          - EFSProvisionedThroughputInMibps
+          - EFSProvisionedThroughput
       - Label:
           default: Domain Configuration
         Parameters:
@@ -285,7 +285,7 @@ Metadata:
         default: What performance mode should be used for the file system?
       EFSThroughputMode:
         default: What throughput mode should be used for the file system?
-      EFSProvisionedThroughputInMibps:
+      EFSProvisionedThroughput:
         default: Provisioned Throughput
       CustomDomain:
         default: Do you want to set a custom domain?
@@ -313,7 +313,7 @@ Rules:
   VerifyEFSProvisionedThroughputMode:
     RuleCondition: !Equals [ !Ref EFSThroughputMode, 'provisioned' ]
     Assertions:
-      - Assert: !Not [ !Equals [ !Ref EFSProvisionedThroughputInMibps, '' ] ]
+      - Assert: !Not [ !Equals [ !Ref EFSProvisionedThroughput, '' ] ]
         AssertDescription: Provisioned throughput is mandatory if throughput mode is set to provisioned.
 
   VerifyCustomDomainEnablement:
@@ -661,7 +661,7 @@ Resources:
         Status: !If [ EFSAutomaticBackupsEnabled, ENABLED, DISABLED ]
       PerformanceMode: !Ref EFSPerformanceMode
       ThroughputMode: !Ref EFSThroughputMode
-      ProvisionedThroughputInMibps: !If [ EFSProvisionedThroughputModeEnabled, !Ref EFSProvisionedThroughputInMibps , !Ref AWS::NoValue ]
+      ProvisionedThroughputInMibps: !If [ EFSProvisionedThroughputModeEnabled, !Ref EFSProvisionedThroughput , !Ref AWS::NoValue ]
 
   EFSMountTargetSecurityGroup:
     Type: AWS::EC2::SecurityGroup

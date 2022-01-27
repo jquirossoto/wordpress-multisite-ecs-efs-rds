@@ -279,7 +279,7 @@ To deploy the solution using AWS CLI, follow these steps:
     EnableEFSAutomaticBackups=Yes
     EFSPerformanceMode=generalPurpose
     EFSThroughputMode=bursting
-    EFSProvisionedThroughputInMibps=
+    EFSProvisionedThroughput=
     CustomDomain=wp.example.com
     CustomDomainCertificateARN=arn:aws:acm:us-east-1:111111111111:certificate/0c2189d1-b4ab-4dce-aebb-2a90b0332acd
     ECSTaskvCPU=.5
