@@ -251,7 +251,7 @@ In case you want to configure WordPress as multisite, you will have to activate 
 
 ## Read replica
 
-This stack allows to create a reading replica in RDS. In order for WordPress to be aware of and use this read replica, [HyperDB](https://wordpress.org/plugins/hyperdb/) must be installed and configured.
+This stack allows to create a reading replica in RDS. In order for WordPress to be aware of and use this read replica, [HyperDB](https://wordpress.org/plugins/hyperdb/) must be installed and configured. These database endpoints are provided in the stack outputs.
 
 ## How to deploy the solution
 
