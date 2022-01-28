@@ -477,7 +477,6 @@ Resources:
   Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBInstanceIdentifier: !Sub ${AWS::StackName}-wordpress
       DBInstanceClass: !Ref DatabaseInstanceClass
       DBName: wordpress
       Engine: mysql
@@ -501,7 +500,6 @@ Resources:
     Properties:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
-      DBInstanceIdentifier: !Sub ${AWS::StackName}-wordpress-readreplica
       MultiAZ: !If [ DatabaseMultiAZEnabled, true, false ]
       StorageType: gp2
 
