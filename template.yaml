@@ -502,6 +502,7 @@ Resources:
       SourceDBInstanceIdentifier: !Ref Database
       DBInstanceClass: !Ref DatabaseInstanceClass
       DBInstanceIdentifier: !Sub ${AWS::StackName}-wordpress-readreplica
+      MultiAZ: !If [ DatabaseMultiAZEnabled, true, false ]
       StorageType: gp2
 
   DatabaseCredentialsAttachment:
@@ -567,16 +568,10 @@ Resources:
       Protocol: HTTP
       Matcher:
         HttpCode: 200-299,302
-      HealthCheckIntervalSeconds: 30
       HealthCheckPath: /
       HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 5
-      UnhealthyThresholdCount: 10
       TargetType: ip
       TargetGroupAttributes:
-        - Key: deregistration_delay.timeout_seconds
-          Value: 30
         - Key: stickiness.enabled
           Value: true
         - Key: stickiness.type
@@ -616,6 +611,24 @@ Resources:
       DefaultActions:
         - Type: forward
           TargetGroupArn: !Ref LoadBalancerTargetGroup
+
+  LoadBalancerHTTPWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    DependsOn:
+      - LoadBalancerHTTPListener
+
+  LoadBalancerHTTPSWaitConditionHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+    Condition: CustomDomainEnabled
+    DependsOn:
+      - LoadBalancerHTTPSListener
+
+  LoadBalancerWaitCondition:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties: 
+      Handle: !If [ CustomDomainEnabled, !Ref LoadBalancerHTTPSWaitConditionHandle, !Ref LoadBalancerHTTPWaitConditionHandle ]
+      Timeout: 1
+      Count: 0
 
   ################################### EFS ###################################
 
@@ -785,6 +798,8 @@ Resources:
 
   ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
+    DependsOn:
+      - DatabaseCredentialsAttachment
     Properties:
       ContainerDefinitions:
         - Name: !FindInMap [ NameConfig, Container, Name ]
@@ -858,6 +873,8 @@ Resources:
 
   ECSService:
     Type: AWS::ECS::Service
+    DependsOn:
+      - LoadBalancerWaitCondition
     Properties:
       ServiceName: !Sub ${AWS::StackName}-ECSService
       Cluster: !Ref ECSCluster
@@ -865,6 +882,7 @@ Resources:
       TaskDefinition: !Ref ECSTaskDefinition
       LaunchType: FARGATE
       EnableExecuteCommand: true
+      HealthCheckGracePeriodSeconds: 300
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: DISABLED
