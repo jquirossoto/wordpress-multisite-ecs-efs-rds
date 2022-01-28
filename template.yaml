@@ -785,13 +785,10 @@ Resources:
           Image: wordpress@sha256:7c33c72f1aba217fd5554d5dbc7dbad3274962c5602da353a6196db1241cd05a
           Environment:
             - Name: WORDPRESS_CONFIG_EXTRA
-              Value: !Sub [
-                'define( "WP_HOME", "${Protocol}://${Domain}" ); define( "WP_SITEURL", "${Protocol}://${Domain}" ); define("WP_ALLOW_MULTISITE", true ); define("COOKIE_DOMAIN", $_SERVER["HTTP_HOST"]);', 
-                {
-                  Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
+              Value: !Sub
+                - define( 'WP_HOME', '${Protocol}://${Domain}' ); define( 'WP_SITEURL', '${Protocol}://${Domain}' ); define('WP_ALLOW_MULTISITE', true ); define('COOKIE_DOMAIN', $_SERVER['HTTP_HOST']);
+                - Protocol: !If [ CustomDomainEnabled, 'https', 'http' ],
                   Domain: !If [ CustomDomainEnabled, !Ref CustomDomain, !GetAtt LoadBalancer.DNSName ]
-                }
-              ]
           Secrets:
             - Name: WORDPRESS_DB_HOST
               ValueFrom: !Sub '${DatabaseCredentials}:host::'
